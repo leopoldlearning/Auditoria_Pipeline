@@ -1,0 +1,10 @@
+=== VALIDACIÓN ESQUEMA V4 ===
+[PASS] Referencial Variables Count: 120
+[PASS] Referencial Unidades Count: 11
+[PASS] Referencial Límites Count: 13
+[PASS] Reporting Current Values Exists: True
+[PASS] Column well_head_pressure_psi_act exists: 0
+[PASS] Función fnc_evaluar_universal: False
+[PASS] SP actualizar_current_values_v4: True
+[PASS] Variable 'well_head_pressure_psi_act' en Maestra: 1
+=== FIN VALIDACIÓN ===

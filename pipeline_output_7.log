@@ -1,0 +1,73 @@
+2026-02-08 12:27:25,775 - INFO - >>> INICIANDO CREACIËN DE ESQUEMAS <<<
+2026-02-08 12:27:25,801 - INFO - Exec: V4__referencial_schema_redesign.sql...
+2026-02-08 12:27:25,911 - INFO - \u2705 V4__referencial_schema_redesign.sql completado.
+2026-02-08 12:27:25,911 - INFO - Exec: V4__stage_schema_redesign.sql...
+2026-02-08 12:27:26,005 - INFO - \u2705 V4__stage_schema_redesign.sql completado.
+2026-02-08 12:27:26,005 - INFO - Exec: V1__universal_schema.sql...
+2026-02-08 12:27:26,027 - INFO - \u2705 V1__universal_schema.sql completado.
+2026-02-08 12:27:26,027 - INFO - Exec: V4__reporting_schema_redesign.sql...
+2026-02-08 12:27:26,126 - INFO - \u2705 V4__reporting_schema_redesign.sql completado.
+2026-02-08 12:27:26,126 - INFO - Exec: V6.1__historical_reporting_engine_v4.sql...
+2026-02-08 12:27:26,174 - INFO - \u2705 V6.1__historical_reporting_engine_v4.sql completado.
+2026-02-08 12:27:26,175 - INFO - Exec: V6.2__dq_engine_v4.sql...
+2026-02-08 12:27:26,176 - INFO - \u2705 V6.2__dq_engine_v4.sql completado.
+2026-02-08 12:27:26,176 - INFO - Exec: V6.3__sync_dim_pozo_targets_v4.sql...
+2026-02-08 12:27:26,177 - INFO - \u2705 V6.3__sync_dim_pozo_targets_v4.sql completado.
+2026-02-08 12:27:26,177 - INFO - Exec: V6__stored_procedures_v4_compatible.sql...
+2026-02-08 12:27:26,218 - INFO - \u2705 V6__stored_procedures_v4_compatible.sql completado.
+2026-02-08 12:27:26,218 - INFO - Exec: V4__referencial_seed_data.sql...
+2026-02-08 12:27:26,409 - INFO - \u2705 V4__referencial_seed_data.sql completado.
+2026-02-08 12:27:26,420 - INFO - >>> BD INICIALIZADA CORRECTAMENTE <<<
+=== SYNC REFERENCIAL MASTER ===
+[OK] Referencial sincronizado correctamente.
+2026-02-08 12:27:28,512 - INFO - ====================================================
+2026-02-08 12:27:28,512 - INFO - >>> INGESTA H═BRIDA + LANDING SCADA (SQL)
+2026-02-08 12:27:28,512 - INFO - ====================================================
+2026-02-08 12:27:28,512 - INFO - \U0001f4c2 Ejecutando SQL: tbl_maestra_202602021632.sql
+2026-02-08 12:27:28,541 - INFO - \u2705 OK: tbl_maestra_202602021632.sql
+2026-02-08 12:27:28,541 - INFO - \U0001f4c2 Ejecutando SQL: tbl_pozo_produccion_202602021632.sql
+2026-02-08 12:27:28,546 - INFO - \u2705 OK: tbl_pozo_produccion_202602021632.sql
+2026-02-08 12:27:28,546 - INFO - \U0001f4d8 Ingestando RESERVAS desde Excel...
+2026-02-08 12:27:28,745 - INFO - \u2705 Reservas insertadas correctamente desde Excel.
+2026-02-08 12:27:28,745 - INFO - \U0001f4c2 Ejecutando SQL: landing_scada_data_202602021604.sql
+2026-02-08 12:27:28,798 - INFO - \u2705 OK: landing_scada_data_202602021604.sql
+2026-02-08 12:27:28,798 - INFO - >>> INGESTA COMPLETA <<<
+============================================================
+STARTING MASTER PIPELINE ORCHESTRATION
+Python Executable: auditor\Scripts\python.exe
+============================================================
+
+>>> 1. Re-initializing Schemas (Full Reset)...
+[OK] Init Schemas completed.
+
+>>> 1.5 Loading Referencial Master (Variables, Rangos, Mapas SCADA)...
+[OK] Referencial Master Loaded.
+
+>>> 2. Ingesting Real Telemetry (SQL Dumps)...
+[OK] Ingestion completed.
+
+>>> 3. Loading Universal Logic Engine (V5)...
+[SKIP] V5 Logic skipped (Covered by V6 in init_schemas).
+
+>>> 3.1 Running Data Quality Engine (V5 DQ)...
+[OK] Data Quality Validation completed.
+
+>>> 3.5 Loading Reporting Engine V2...
+[SKIP] Reporting Engine V2 skipped (Covered by V6.1 in init_schemas).
+
+>>> 5. Running Reporting Load (Daily, Hourly, Monthly)...
+[OK] History loaded.
+
+>>> 5.5 Loading Business KPIs...
+[OK] Business KPIs loaded.
+
+>>> 6. Updating Snapshot (dataset_current_values)...
+[OK] Snapshot updated (V4).
+
+>>> 6.5 Applying Color & Target Logic...
+[SKIP] Color Logic (Integrated in V4).
+
+>>> 6.6 Syncing Dim Pozo Targets...
+[OK] Dim Pozo Targets Synced.
+
+>>> PIPELINE COMPLETED SUCCESSFULLY <<<

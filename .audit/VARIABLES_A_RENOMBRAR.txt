@@ -1,0 +1,16 @@
+VARIABLES A RENOMBRAR EN DATASET_CURRENT_VALUES (12 total)
+Generado: 2026-02-08 09:14:27
+================================================================================
+
+pump_spm_var_pct → pump_avg_spm_act
+spm_status_color → pump_spm_status_color
+gas_fill_monitor → gas_fill_monitor_pct_act
+rod_weight_buoyant_lb → rod_weight_buoyant_lb_act
+whp_psi → well_head_pressure_psi_act
+chp_psi → casing_head_pressure_psi_act
+pip_psi → pump_intake_pressure_psi_act
+pdp_psi → pump_discharge_pressure_psi_act
+pump_stroke_length_act → current_stroke_length_act_in
+mtbf_status_color → mtbf_target
+kpi_mtbf_variance_pct → mtbf_variance_pct
+ai_accuracy_score → ai_accuracy_act

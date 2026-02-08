@@ -1,0 +1,126 @@
+2026-02-03 11:33:36,289 - INFO - ================================================================================
+2026-02-03 11:33:36,289 - INFO - AUDIT DATABASE INITIALIZATION
+2026-02-03 11:33:36,289 - INFO - ================================================================================
+2026-02-03 11:33:36,387 - INFO - Executing: Destructive Reset
+2026-02-03 11:33:36,725 - INFO - \u2705 Completed: Destructive Reset
+2026-02-03 11:33:36,727 - INFO - Executing: Stage Schema
+2026-02-03 11:33:36,949 - INFO - \u2705 Completed: Stage Schema
+2026-02-03 11:33:36,949 - INFO - Executing: Universal Schema
+2026-02-03 11:33:37,165 - INFO - \u2705 Completed: Universal Schema
+2026-02-03 11:33:37,165 - INFO - Executing: Referencial Schema
+2026-02-03 11:33:37,372 - INFO - \u2705 Completed: Referencial Schema
+2026-02-03 11:33:37,372 - INFO - Executing: Reporting Schema
+2026-02-03 11:33:37,594 - INFO - \u2705 Completed: Reporting Schema
+2026-02-03 11:33:37,595 - INFO - Executing: Stage Tables (V4__stage_schema_redesign.sql)
+2026-02-03 11:33:37,922 - INFO - \u2705 Completed: Stage Tables
+2026-02-03 11:33:37,993 - INFO - Verified: stage now has 5 tables.
+2026-02-03 11:33:37,995 - INFO - Executing: Universal Tables (V1__universal_schema.sql)
+2026-02-03 11:33:38,277 - INFO - \u2705 Completed: Universal Tables
+2026-02-03 11:33:38,280 - INFO - Verified: universal now has 3 tables.
+2026-02-03 11:33:38,281 - INFO - Executing: Referencial Tables (V3__referencial_schema_redesign.sql)
+2026-02-03 11:33:38,607 - INFO - \u2705 Completed: Referencial Tables
+2026-02-03 11:33:38,611 - INFO - Verified: referencial now has 7 tables.
+2026-02-03 11:33:38,612 - INFO - Executing: Reporting Tables (V3__reporting_schema_redesign.sql)
+2026-02-03 11:33:39,166 - INFO - \u2705 Completed: Reporting Tables
+2026-02-03 11:33:39,168 - INFO - Verified: reporting now has 10 tables.
+2026-02-03 11:33:39,169 - INFO - Executing: DQ Engine Procedure (V5__dq_engine_orchestrator.sql)
+2026-02-03 11:33:39,378 - INFO - \u2705 Completed: DQ Engine Procedure
+2026-02-03 11:33:39,378 - INFO - Executing: Referencial Seed Data (V3__referencial_seed_data.sql)
+2026-02-03 11:33:39,771 - INFO - \u2705 Completed: Referencial Seed Data
+2026-02-03 11:33:39,771 - INFO - 
+================================================================================
+2026-02-03 11:33:39,772 - INFO - VERIFICATION
+2026-02-03 11:33:39,772 - INFO - ================================================================================
+2026-02-03 11:33:39,776 - INFO - Schemas created: pg_toast, public, referencial, reporting, stage, universal
+2026-02-03 11:33:39,779 - INFO -   referencial: 7 tables
+2026-02-03 11:33:39,779 - INFO -   reporting: 10 tables
+2026-02-03 11:33:39,779 - INFO -   stage: 5 tables
+2026-02-03 11:33:39,779 - INFO -   universal: 3 tables
+2026-02-03 11:33:39,780 - INFO - 
+================================================================================
+2026-02-03 11:33:39,780 - INFO - \u2705 SCHEMAS INITIALIZED SUCCESSFULLY
+2026-02-03 11:33:39,780 - INFO - ================================================================================
+2026-02-03 11:33:39,780 - INFO - 
+\U0001f4ca Next steps:
+2026-02-03 11:33:39,781 - INFO - 1. Open DBeaver and connect to localhost:5433
+2026-02-03 11:33:39,781 - INFO - 2. Verify schemas: stage, universal, referencial, reporting
+2026-02-03 11:33:39,781 - INFO - 3. Check referencial.tbl_maestra_variables for seed data
+[NbConvertApp] Converting notebook 0_1_udf_to_stage_AWS_v0.ipynb to notebook
+C:\Users\leopo\.pyenv\pyenv-win\versions\3.11.8\Lib\site-packages\zmq\_future.py:718: RuntimeWarning: Proactor event loop does not implement add_reader family of methods required for zmq. Registering an additional selector thread for add_reader support via tornado. Use `asyncio.set_event_loop_policy(WindowsSelectorEventLoopPolicy())` to avoid this warning.
+  self._get_loop()
+[NbConvertApp] Writing 33960 bytes to 0_1_udf_to_stage_AWS_v0.ipynb
+Found 2 files. Starting ingestion...
+Processing tbl_landing_202602021632.sql...
+Executing SQL dump tbl_landing_202602021632.sql...
+Error processing tbl_landing_202602021632.sql: Command '['docker', 'exec', '-i', 'bp010-audit-db', 'psql', '-U', 'audit', '-d', 'etl_data', '-v', 'ON_ERROR_STOP=1']' returned non-zero exit status 3.
+Processing tbl_pozo_produccion_202602021632.sql...
+Executing SQL dump tbl_pozo_produccion_202602021632.sql...
+[OK] tbl_pozo_produccion_202602021632.sql executed successfully.
+[NbConvertApp] Converting notebook 0_3_stage_to_stage_AWS_v0.ipynb to notebook
+C:\Users\leopo\.pyenv\pyenv-win\versions\3.11.8\Lib\site-packages\zmq\_future.py:718: RuntimeWarning: Proactor event loop does not implement add_reader family of methods required for zmq. Registering an additional selector thread for add_reader support via tornado. Use `asyncio.set_event_loop_policy(WindowsSelectorEventLoopPolicy())` to avoid this warning.
+  self._get_loop()
+[NbConvertApp] Writing 15552 bytes to 0_3_stage_to_stage_AWS_v0.ipynb
+============================================================
+STARTING MASTER PIPELINE ORCHESTRATION
+============================================================
+
+>>> Re-initializing schemas (Full Reset)...
+[OK] Schemas prepared.
+
+>>> Executing 0_1_udf_to_stage_AWS_v0.ipynb...
+[OK] 0_1_udf_to_stage_AWS_v0.ipynb finished successfully.
+
+>>> Executing 0_3_stage_to_stage_AWS_v0.ipynb...
+[OK] 0_3_stage_to_stage_AWS_v0.ipynb finished successfully.
+
+>>> Running Data Quality Validation Engine...
+[OK] DQ Validation finished.
+
+>>> Running Reporting Layer Population...
+Traceback (most recent call last):
+  File "C:\Users\leopo\.pyenv\pyenv-win\versions\3.11.8\Lib\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "C:\Users\leopo\.pyenv\pyenv-win\versions\3.11.8\Lib\site-packages\sqlalchemy\engine\default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+psycopg2.errors.UndefinedFunction: procedure reporting.sp_load_to_reporting(date, date, boolean, boolean, boolean) does not exist
+LINE 1: CALL reporting.sp_load_to_reporting('2026-02-01'::DATE, '202...
+             ^
+HINT:  No procedure matches the given name and argument types. You might need to add explicit type casts.
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\ITMeet\Operaciones\BP010-data-pipelines-auditoria\MASTER_PIPELINE_RUNNER.py", line 75, in <module>
+    run_pipeline()
+  File "D:\ITMeet\Operaciones\BP010-data-pipelines-auditoria\MASTER_PIPELINE_RUNNER.py", line 64, in run_pipeline
+    execute_sql_query("CALL reporting.sp_load_to_reporting('2026-02-01'::DATE, '2026-02-28'::DATE, TRUE, TRUE, TRUE);")
+  File "D:\ITMeet\Operaciones\BP010-data-pipelines-auditoria\MASTER_PIPELINE_RUNNER.py", line 35, in execute_sql_query
+    conn.execute(text(query))
+  File "C:\Users\leopo\.pyenv\pyenv-win\versions\3.11.8\Lib\site-packages\sqlalchemy\engine\base.py", line 1419, in execute
+    return meth(
+           ^^^^^
+  File "C:\Users\leopo\.pyenv\pyenv-win\versions\3.11.8\Lib\site-packages\sqlalchemy\sql\elements.py", line 526, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\leopo\.pyenv\pyenv-win\versions\3.11.8\Lib\site-packages\sqlalchemy\engine\base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\leopo\.pyenv\pyenv-win\versions\3.11.8\Lib\site-packages\sqlalchemy\engine\base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\leopo\.pyenv\pyenv-win\versions\3.11.8\Lib\site-packages\sqlalchemy\engine\base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "C:\Users\leopo\.pyenv\pyenv-win\versions\3.11.8\Lib\site-packages\sqlalchemy\engine\base.py", line 2355, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "C:\Users\leopo\.pyenv\pyenv-win\versions\3.11.8\Lib\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "C:\Users\leopo\.pyenv\pyenv-win\versions\3.11.8\Lib\site-packages\sqlalchemy\engine\default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedFunction) procedure reporting.sp_load_to_reporting(date, date, boolean, boolean, boolean) does not exist
+LINE 1: CALL reporting.sp_load_to_reporting('2026-02-01'::DATE, '202...
+             ^
+HINT:  No procedure matches the given name and argument types. You might need to add explicit type casts.
+
+[SQL: CALL reporting.sp_load_to_reporting('2026-02-01'::DATE, '2026-02-28'::DATE, TRUE, TRUE, TRUE);]
+(Background on this error at: https://sqlalche.me/e/20/f405)

@@ -1,0 +1,23 @@
+2026-02-02 07:58:43,808 - INFO - ================================================================================
+2026-02-02 07:58:43,808 - INFO - AUDIT DATABASE INITIALIZATION
+2026-02-02 07:58:43,808 - INFO - ================================================================================
+2026-02-02 07:58:43,846 - INFO - Executing: Stage Schema
+Traceback (most recent call last):
+  File "D:\ITMeet\Operaciones\BP010-data-pipelines-auditoria\init_schemas.py", line 80, in execute_sql_statement
+    result = subprocess.run(
+             ^^^^^^^^^^
+NameError: name 'subprocess' is not defined
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\ITMeet\Operaciones\BP010-data-pipelines-auditoria\init_schemas.py", line 151, in <module>
+    success = main()
+              ^^^^^^
+  File "D:\ITMeet\Operaciones\BP010-data-pipelines-auditoria\init_schemas.py", line 106, in main
+    success = execute_sql_statement(item, description)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\ITMeet\Operaciones\BP010-data-pipelines-auditoria\init_schemas.py", line 88, in execute_sql_statement
+    except subprocess.CalledProcessError as e:
+           ^^^^^^^^^^
+NameError: name 'subprocess' is not defined

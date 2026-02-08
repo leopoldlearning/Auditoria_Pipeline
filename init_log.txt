@@ -1,0 +1,166 @@
+2026-02-02 07:57:37,769 - INFO - ================================================================================
+2026-02-02 07:57:37,769 - INFO - AUDIT DATABASE INITIALIZATION
+2026-02-02 07:57:37,769 - INFO - ================================================================================
+2026-02-02 07:57:37,812 - INFO - Executing: Stage Schema
+2026-02-02 07:57:37,876 - INFO - \u2705 Completed: Stage Schema
+2026-02-02 07:57:37,876 - INFO - Executing: Universal Schema
+2026-02-02 07:57:37,879 - INFO - \u2705 Completed: Universal Schema
+2026-02-02 07:57:37,879 - INFO - Executing: Referencial Schema
+2026-02-02 07:57:37,880 - INFO - \u2705 Completed: Referencial Schema
+2026-02-02 07:57:37,880 - INFO - Executing: Reporting Schema
+2026-02-02 07:57:37,880 - INFO - \u2705 Completed: Reporting Schema
+2026-02-02 07:57:37,880 - INFO - Executing: Stage Tables (V4__stage_schema_redesign.sql)
+2026-02-02 07:57:37,927 - WARNING - Statement warning: (psycopg2.errors.UndefinedTable) relation "stage.tbl_pozo_produccion" does not exist
+
+[SQL: CREATE T
+2026-02-02 07:57:37,928 - INFO - \u2705 Completed: Stage Tables
+2026-02-02 07:57:37,928 - INFO - Executing: Universal Tables (V1__universal_schema.sql)
+2026-02-02 07:57:37,929 - WARNING - Statement warning: (psycopg2.errors.UndefinedTable) relation "universal.ipr_resultados" does not exist
+
+[SQL: CREATE IN
+2026-02-02 07:57:37,930 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,931 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,932 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,932 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,932 - INFO - \u2705 Completed: Universal Tables
+2026-02-02 07:57:37,932 - INFO - Executing: Referencial Tables (V3__referencial_schema_redesign.sql)
+2026-02-02 07:57:37,940 - INFO - \u2705 Completed: Referencial Tables
+2026-02-02 07:57:37,940 - INFO - Executing: Reporting Tables (V3__reporting_schema_redesign.sql)
+2026-02-02 07:57:37,943 - WARNING - Statement warning: (psycopg2.errors.UndefinedTable) relation "reporting.dataset_current_values" does not exist
+
+[SQL: C
+2026-02-02 07:57:37,943 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,944 - WARNING - Statement warning: (psycopg2.errors.SyntaxError) syntax error at or near "INSERT"
+LINE 2:     INSERT INTO reporting.dim
+2026-02-02 07:57:37,945 - WARNING - Statement warning: (psycopg2.errors.SyntaxError) syntax error at or near "GET"
+LINE 1: GET DIAGNOSTICS filas_insertadas
+2026-02-02 07:57:37,946 - WARNING - Statement warning: (psycopg2.errors.SyntaxError) syntax error at or near "RETURN"
+LINE 1: RETURN filas_insertadas
+     
+2026-02-02 07:57:37,947 - WARNING - Statement warning: (psycopg2.errors.SyntaxError) unterminated dollar-quoted string at or near "$$ LANGUAGE plpgsql"
+LIN
+2026-02-02 07:57:37,947 - WARNING - Statement warning: (psycopg2.errors.SyntaxError) unterminated dollar-quoted string at or near "$$
+DECLARE
+    filas_ins
+2026-02-02 07:57:37,948 - WARNING - Statement warning: (psycopg2.errors.SyntaxError) syntax error at or near "INSERT"
+LINE 2:     INSERT INTO reporting.dim
+2026-02-02 07:57:37,948 - WARNING - Statement warning: (psycopg2.errors.SyntaxError) syntax error at or near "GET"
+LINE 1: GET DIAGNOSTICS filas_insertadas
+2026-02-02 07:57:37,950 - WARNING - Statement warning: (psycopg2.errors.SyntaxError) syntax error at or near "RETURN"
+LINE 1: RETURN filas_insertadas
+     
+2026-02-02 07:57:37,951 - WARNING - Statement warning: (psycopg2.errors.SyntaxError) unterminated dollar-quoted string at or near "$$ LANGUAGE plpgsql"
+LIN
+2026-02-02 07:57:37,952 - WARNING - Statement warning: (psycopg2.errors.UndefinedTable) relation "reporting.fact_operaciones_horarias" does not exist
+
+[SQL
+2026-02-02 07:57:37,953 - WARNING - Statement warning: (psycopg2.errors.UndefinedTable) relation "reporting.fact_operaciones_diarias" does not exist
+
+[SQL:
+2026-02-02 07:57:37,954 - WARNING - Statement warning: (psycopg2.errors.UndefinedTable) relation "reporting.fact_operaciones_mensuales" does not exist
+
+[SQ
+2026-02-02 07:57:37,954 - INFO - \u2705 Completed: Reporting Tables
+2026-02-02 07:57:37,954 - INFO - Executing: Referencial Seed Data (V3__referencial_seed_data.sql)
+2026-02-02 07:57:37,957 - WARNING - Statement warning: (psycopg2.errors.UndefinedTable) relation "referencial.tbl_maestra_variables" does not exist
+LINE 1:
+2026-02-02 07:57:37,958 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,958 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,958 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,960 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,960 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,961 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,962 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,963 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,963 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,964 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,964 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,965 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,965 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,966 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,967 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,967 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,968 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,968 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,969 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,971 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,972 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,973 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,973 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,974 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,976 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,976 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,978 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,980 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,981 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,983 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,984 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,985 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,986 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,988 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,989 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,990 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,991 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,993 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,993 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,994 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,996 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,997 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,998 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:37,999 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,000 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,001 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,002 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,004 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,005 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,006 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,007 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,008 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,009 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,010 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,011 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,012 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,013 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,013 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,015 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,016 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,018 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,020 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,021 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,022 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,025 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,025 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,027 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,027 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,029 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,029 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,030 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,031 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,032 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,033 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,033 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,034 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,035 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,036 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,038 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,039 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,040 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,042 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,043 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,043 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,043 - WARNING - Statement warning: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end 
+2026-02-02 07:57:38,047 - INFO - \u2705 Completed: Referencial Seed Data
+2026-02-02 07:57:38,047 - INFO - 
+================================================================================
+2026-02-02 07:57:38,047 - INFO - VERIFICATION
+2026-02-02 07:57:38,047 - INFO - ================================================================================
+2026-02-02 07:57:38,048 - INFO - Schemas created: pg_toast, public, referencial, reporting, stage, universal
+2026-02-02 07:57:38,048 - INFO - 
+================================================================================
+2026-02-02 07:57:38,052 - INFO - \u2705 SCHEMAS INITIALIZED SUCCESSFULLY
+2026-02-02 07:57:38,052 - INFO - ================================================================================
+2026-02-02 07:57:38,052 - INFO - 
+\U0001f4ca Next steps:
+2026-02-02 07:57:38,053 - INFO - 1. Open DBeaver and connect to localhost:5433
+2026-02-02 07:57:38,053 - INFO - 2. Verify schemas: stage, universal, referencial, reporting
+2026-02-02 07:57:38,053 - INFO - 3. Check referencial.tbl_maestra_variables for seed data

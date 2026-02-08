@@ -1,0 +1,38 @@
+2026-02-02 07:59:14,302 - INFO - ================================================================================
+2026-02-02 07:59:14,302 - INFO - AUDIT DATABASE INITIALIZATION
+2026-02-02 07:59:14,302 - INFO - ================================================================================
+2026-02-02 07:59:14,341 - INFO - Executing: Stage Schema
+2026-02-02 07:59:14,486 - INFO - \u2705 Completed: Stage Schema
+2026-02-02 07:59:14,486 - INFO - Executing: Universal Schema
+2026-02-02 07:59:14,661 - INFO - \u2705 Completed: Universal Schema
+2026-02-02 07:59:14,661 - INFO - Executing: Referencial Schema
+2026-02-02 07:59:14,807 - INFO - \u2705 Completed: Referencial Schema
+2026-02-02 07:59:14,807 - INFO - Executing: Reporting Schema
+2026-02-02 07:59:14,941 - INFO - \u2705 Completed: Reporting Schema
+2026-02-02 07:59:14,941 - INFO - Executing: Stage Tables (V4__stage_schema_redesign.sql)
+2026-02-02 07:59:15,066 - INFO - \u2705 Completed: Stage Tables
+2026-02-02 07:59:15,066 - INFO - Executing: Universal Tables (V1__universal_schema.sql)
+2026-02-02 07:59:15,248 - INFO - \u2705 Completed: Universal Tables
+2026-02-02 07:59:15,248 - INFO - Executing: Referencial Tables (V3__referencial_schema_redesign.sql)
+2026-02-02 07:59:15,433 - INFO - \u2705 Completed: Referencial Tables
+2026-02-02 07:59:15,433 - INFO - Executing: Reporting Tables (V3__reporting_schema_redesign.sql)
+2026-02-02 07:59:15,647 - INFO - \u2705 Completed: Reporting Tables
+2026-02-02 07:59:15,648 - INFO - Executing: Referencial Seed Data (V3__referencial_seed_data.sql)
+2026-02-02 07:59:15,819 - INFO - \u2705 Completed: Referencial Seed Data
+2026-02-02 07:59:15,819 - INFO - 
+================================================================================
+2026-02-02 07:59:15,819 - INFO - VERIFICATION
+2026-02-02 07:59:15,819 - INFO - ================================================================================
+2026-02-02 07:59:15,843 - INFO - Schemas created: pg_toast, public, referencial, reporting, stage, universal
+2026-02-02 07:59:15,846 - INFO -   referencial: 2 tables
+2026-02-02 07:59:15,846 - INFO -   reporting: 5 tables
+2026-02-02 07:59:15,846 - INFO -   universal: 3 tables
+2026-02-02 07:59:15,846 - INFO - 
+================================================================================
+2026-02-02 07:59:15,846 - INFO - \u2705 SCHEMAS INITIALIZED SUCCESSFULLY
+2026-02-02 07:59:15,846 - INFO - ================================================================================
+2026-02-02 07:59:15,846 - INFO - 
+\U0001f4ca Next steps:
+2026-02-02 07:59:15,848 - INFO - 1. Open DBeaver and connect to localhost:5433
+2026-02-02 07:59:15,848 - INFO - 2. Verify schemas: stage, universal, referencial, reporting
+2026-02-02 07:59:15,848 - INFO - 3. Check referencial.tbl_maestra_variables for seed data

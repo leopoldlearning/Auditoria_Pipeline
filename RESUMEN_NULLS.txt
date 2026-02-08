@@ -1,0 +1,135 @@
+╔════════════════════════════════════════════════════════════════╗
+║  🔍 AUDITORÍA DE NULLs - RESUMEN EJECUTIVO                    ║
+║  MASTER_PIPELINE_RUNNER - BP010-data-pipelines-auditoria      ║
+╚════════════════════════════════════════════════════════════════╝
+
+📊 ANÁLISIS REALIZADO POR 3 AGENTES ESPECIALIZADOS EN PARALELO:
+
+🗄️ POSTGRES EXPERT
+   ✓ Análisis de esquemas (DDL)
+   ✓ Identificación de campos NULLABLE
+   ✓ Constraints e integridad referencial
+   ✓ 5 esquemas analizados, 80+ campos NULLABLE detectados
+
+⚙️ DEVOPS ENGINEER  
+   ✓ Análisis de scripts de transformación
+   ✓ Mapeos de datos (IDs → Columnas)
+   ✓ Manejo de excepciones
+   ✓ 6 problemas identificados en scripts
+
+📊 DATA SCIENTIST
+   ✓ Análisis de flujos de datos
+   ✓ Pérdida de información en transformaciones
+   ✓ Agregaciones con NULLs
+   ✓ 6 puntos de fuga potencial en datos
+
+═══════════════════════════════════════════════════════════════════
+
+🎯 10 FUENTES PRINCIPALES DE NULLs IDENTIFICADAS:
+
+1️⃣ landing_scada_data VACÍA
+   └─ Causa: Archivos no encontrados en D:\ITMeet\Operaciones\API Hydrog manual\
+   └─ Impacto: Cascada de NULLs en toda la cadena
+   └─ Verificación: SELECT COUNT(*) FROM stage.landing_scada_data;
+
+2️⃣ tbl_pozo_maestra CON DATOS INCOMPLETOS
+   └─ Causa: ReservasDataIngestor solo mapea 37 IDs de 162 posibles
+   └─ Impacto: Columnas maestras = NULL para pozos nuevos
+   └─ Verificación: SELECT * FROM stage.tbl_pozo_maestra LIMIT 1;
+
+3️⃣ tbl_pozo_reservas INSUFICIENTE
+   └─ Causa: ingest_reservas_manual() solo inserta 1 pozo (well_id=5)
+   └─ Impacto: Todos excepto well_id=5 quedan SIN RESERVAS
+   └─ Verificación: SELECT COUNT(DISTINCT well_id) FROM stage.tbl_pozo_reservas;
+
+4️⃣ tbl_pozo_produccion CON var_ids INCOMPLETOS
+   └─ Causa: landing_scada_data no tiene todos los var_ids necesarios
+   └─ Impacto: Columnas dispersas = NULL (80+ columnas)
+   └─ Verificación: SELECT COUNT(spm_promedio) FROM stage.tbl_pozo_produccion;
+
+5️⃣ TRANSFORMACIÓN LANDING → PRODUCCIÓN PIERDE DATOS
+   └─ Causa: V1__stage_to_stage.sql usa condiciones restrictivas
+   └─ Impacto: LEFT JOINs generan NULLs
+   └─ Verificación: Comparar landing_scada_data vs tbl_pozo_produccion COUNT
+
+6️⃣ FOREIGN KEY CONSTRAINTS RECHAZA REGISTROS
+   └─ Causa: well_id falta en tbl_pozo_maestra
+   └─ Impacto: INSERTs fallan silenciosamente, 0 registros
+   └─ Verificación: Ver logs de ejecución de 0_1_udf_to_stage
+
+7️⃣ REPORTING HEREDA NULLs DE STAGE
+   └─ Causa: sp_load_to_reporting() toma datos con NULLs
+   └─ Impacto: FACT_OPERACIONES_* tiene NULLs propagados
+   └─ Verificación: SELECT COUNT(Produccion_Petroleo_bbl) FROM reporting.FACT_OPERACIONES_DIARIAS;
+
+8️⃣ AGREGACIONES SUM/AVG CON NULLs = NULLs
+   └─ Causa: SUM(NULL) = NULL, AVG(NULL) = NULL
+   └─ Impacto: KPIs calculados = NULL
+   └─ Verificación: SELECT SUM(produccion_petroleo_diaria) FROM stage.tbl_pozo_produccion;
+
+9️⃣ SEMÁFOROS CON VALORES ACTUALES NULL
+   └─ Causa: V3__logic_color_calculation.sql sin COALESCE
+   └─ Impacto: dataset_current_values tiene semáforos NULL
+   └─ Verificación: SELECT estado_motor, dq_status FROM reporting.dataset_current_values WHERE dq_status IS NULL;
+
+🔟 ÚLTIMA LECTURA CON CAMPOS NULL
+   └─ Causa: timestamp_lectura sin NOT NULL, última lectura incompleta
+   └─ Impacto: dataset_current_values heredada NULLs
+   └─ Verificación: SELECT well_id, oil_today_bbl, spm_actual FROM reporting.dataset_current_values WHERE oil_today_bbl IS NULL;
+
+═══════════════════════════════════════════════════════════════════
+
+🔧 SOLUCIONES RECOMENDADAS POR AGENTE:
+
+POSTGRES EXPERT:
+  ✓ Agregar NOT NULL a campos críticos en esquema
+  ✓ Crear CHECK constraints para valores válidos
+  ✓ Reemplazar LEFT JOINs por INNER JOINs donde sea posible
+  ✓ Usar COALESCE() en agregaciones
+
+DEVOPS ENGINEER:
+  ✓ Validar archivos antes de ingestar (file existence check)
+  ✓ Expandir ReservasDataIngestor para mapear 162 IDs
+  ✓ Generar reservas para TODOS los pozos, no solo well_id=5
+  ✓ Añadir logging detallado de registros procesados
+
+DATA SCIENTIST:
+  ✓ Validar completitud de landing_scada_data
+  ✓ Documentar qué var_ids son CRÍTICOS vs opcionales
+  ✓ Usar imputación (COALESCE con valores por defecto)
+  ✓ Crear reportes de cobertura de datos
+
+═══════════════════════════════════════════════════════════════════
+
+📋 ARCHIVOS GENERADOS:
+
+1. auditoria_nulls_pipeline.md
+   └─ Análisis detallado por agente (359 líneas)
+
+2. diagnostico_nulls.sql
+   └─ 10 consultas SQL para identificar NULLs exactos
+
+═══════════════════════════════════════════════════════════════════
+
+✅ PRÓXIMOS PASOS:
+
+Paso 1: Ejecutar diagnostico_nulls.sql en tu base de datos
+        → Identificar exactamente dónde están los NULLs
+
+Paso 2: Revisar auditoria_nulls_pipeline.md
+        → Entender causas raíz
+
+Paso 3: Aplicar soluciones por prioridad:
+        1. CRÍTICO: Verificar landing_scada_data (Fuga #1)
+        2. CRÍTICO: Expandir mapeo de IDs (Fuga #2, #3)
+        3. IMPORTANTE: Usar COALESCE en agregaciones (Fuga #8)
+        4. IMPORTANTE: Validar semáforos (Fuga #9)
+
+Paso 4: Re-ejecutar pipeline después de correcciones
+
+═══════════════════════════════════════════════════════════════════
+Auditoría completada: 2026-02-05 08:27:20
+Total de fuentes de NULLs: 10 identificadas
+Archivos de diagnóstico: 2 generados
+Estado: LISTO PARA ACCIÓN ✅
+═══════════════════════════════════════════════════════════════════

@@ -1,0 +1,164 @@
+﻿Nombre_Variable;Capa;Nombre_Tabla;ID;Categoria_Clasificacion;observacion
+% Carga Unidad;Reporting;Calculado;80;Reporting;Reporting
+% Carga Varillas;Reporting;Calculado;81;Reporting;Cálculo: Carga Máx / Carga Nominal Varillas. %Carga_varillas = Maximum Road Load / Rated mid rod string load
+% Relacion Pwf actual / Pe;Reporting;Calculado;153;Reporting;Reporting/ Puede calular de procedimiento IPR. Requerirá actualización
+% Relacion Qf / Qmax;Reporting;Calculado;154;Reporting;Reporting/ Puede calular de procedimiento IPR. Requerirá actualización
+alerta_inclinacion_grados;Stage;stage.tbl_pozo_produccion;90;Sensores y Otros;
+anchor_vertical_depth;Stage;stage.tbl_pozo_produccion;78;Sensores y Otros;
+api_number;Stage;stage.tbl_pozo_maestra;5;Identificación y Ubicación;
+Burble point pressure, psi;;Duplicado;41*;;
+campo;Stage;stage.tbl_pozo_maestra;15;Identificación y Ubicación;
+carga_caja_engranajes;Stage;stage.tbl_pozo_produccion;79;Cargas y Carreras;
+carga_maxima_fluido_api;Stage;stage.tbl_pozo_maestra;75;Cargas y Carreras;pasó de producción a maestra
+carga_minima_nominal_sarta;Stage;stage.tbl_pozo_maestra;47;Equipos (Nominales);Equipos (Nominales)
+carga_nominal_unidad;Stage;stage.tbl_pozo_maestra;46;Equipos (Nominales);Equipos (Nominales)
+carrera_actual_bomba;Reporting;calculado;69;Reporting;Calculado. Reporting
+carrera_actual_unidad;Reporting;calculado;68;Reporting;Calculado. Reporting
+carrera_bomba_api;Stage;stage.tbl_pozo_produccion;121;Cargas y Carreras;
+cliente;Stage;stage.tbl_pozo_maestra;12;Identificación y Ubicación;
+contador_emboladas;Stage;stage.tbl_pozo_produccion;101;Acumuladores y Contadores;
+contenido_finos;Stage;stage.tbl_pozo_reservas;58;Misceláneos;
+conteo_poc_diario;Stage;stage.tbl_pozo_produccion;115;Indicadores de Eficiencia y POC;
+conteo_poc_medidor_acum;Stage;stage.tbl_pozo_produccion;125;Acumuladores y Contadores;
+coordenadas_pozo;Stage;stage.tbl_pozo_maestra;4;Identificación y Ubicación;
+corriente_nominal_motor;Stage;stage.tbl_pozo_maestra;44;Equipos (Nominales);Equipos (Nominales)
+Country /OPEN;;Duplicado;34*;;"Marcado como ""OPEN"" en la hoja Producción. Puede ser redundante con ID 13 (Maestra), pero si el Formato 1 lo pide en Producción (quizás para overriding), se debe crear. "
+motor_current_a_act;Stage;stage.tbl_pozo_produccion;67;Operación y Monitoreo del Equipo;
+diametro_embolo_bomba;Stage;stage.tbl_pozo_maestra;33;Equipos (Nominales);Equipos (Nominales)
+downhole_pump_load;Stage;stage.tbl_pozo_produccion;158;Tarjetas de Dinamómetro;
+downhole_pump_position;Stage;stage.tbl_pozo_produccion;157;Tarjetas de Dinamómetro;
+dq_id;;stage.tbl_pozo_scada_dq;;General;
+eficiencia_levantamiento;Stage;stage.tbl_pozo_produccion;118;Indicadores de Eficiencia y POC;
+emboladas_arranque_poc;Stage;stage.tbl_pozo_produccion;123;Acumuladores y Contadores;
+emboladas_diarias;Stage;stage.tbl_pozo_produccion;111;Acumuladores y Contadores;
+emboladas_espera_poc;Stage;stage.tbl_pozo_produccion;124;Acumuladores y Contadores;
+emboladas_medidor_acumuladas;Stage;stage.tbl_pozo_produccion;105;Acumuladores y Contadores;
+energia_medidor_acumulada;Stage;stage.tbl_pozo_produccion;104;Acumuladores y Contadores;
+espesor_formacion;Stage;stage.tbl_pozo_maestra;23;Completación y Geología;
+motor_running_flag;Stage;stage.tbl_pozo_produccion;120;Operación y Monitoreo del Equipo;
+factor_dano;Stage;stage.tbl_pozo_reservas;161;Propiedades Dinámicas/Calculadas;Queda asignado al mismo ID
+factor_volumetrico;Stage;stage.tbl_pozo_reservas;30;Presiones y Fluidos;
+falla_inclinacion_grados;Stage;stage.tbl_pozo_produccion;91;Sensores y Otros;
+fecha_creacion;;stage.tbl_pozo_maestra;;CURRENT_TIMESTAMP;CURRENT_TIMESTAMP
+fecha_registro;Stage;stage.tbl_pozo_maestra;6;PK;Equipos (Nominales)
+fecha_registro;Stage;stage.tbl_pozo_reservas;6;PK;Antes estaba en 165, pero es el mismo ID=6 para distribuir entre las tablas maestra y reserva
+Field / OPEN;;Duplicado;36*;;Similar al 34.
+Fluid Flow Monitor, bpd;Stage;stage.tbl_pozo_produccion;65;Producción y Fluidos (Diarios); fluid flow monitor es el usado para sobreponer en la curva IPR y verificar si esta comportandose bien el flujo del pozo. La IPR se grafica incialmente con la ultima prueba de produccion real del pozo ID:107
+frecuencia_nominal_motor;Stage;stage.tbl_pozo_maestra;85;Equipos (Nominales);Equipos (Nominales)
+fuga_diaria;Stage;stage.tbl_pozo_produccion;113;Producción y Fluidos (Diarios);Producción y Fluidos (Diarios)
+Gas Production, CF/D;;Consultar Con GA;9*;;ID 110
+gravedad_api;Stage;stage.tbl_pozo_reservas;10;Presiones y Fluidos;
+gravedad_especifica_agua;Stage;stage.tbl_pozo_reservas;63;Presiones y Fluidos;
+horas_operacion_acumuladas;Stage;stage.tbl_pozo_produccion;102;Acumuladores y Contadores;
+idn;;stage.landing_scada_data;;General;Tabla landing_scada_date
+inclinacion_cilindro_x;Stage;stage.tbl_pozo_produccion;88;Sensores y Otros;
+inclinacion_cilindro_y;Stage;stage.tbl_pozo_produccion;89;Sensores y Otros;
+inclinacion_vastago;Stage;stage.tbl_pozo_produccion;82;Sensores y Otros;
+intervalo_disparos;Stage;stage.tbl_pozo_maestra;26;Completación y Geología;
+kwh_por_barril;Stage;stage.tbl_pozo_produccion;71;Indicadores de Eficiencia y POC;
+llenado_bomba_minimo;Stage;stage.tbl_pozo_reservas;48;Parámetros de Operación/Setpoints;Parámetros de Operación/Setpoints
+llenado_promedio_diario;Stage;stage.tbl_pozo_produccion;112;Acumuladores y Contadores;
+location_id;;stage.landing_scada_data;;General;Tabla landing_scada_date
+longitud_carrera_nominal_unidad_in;Stage;stage.tbl_pozo_maestra;42;Equipos (Nominales);Equipos (Nominales)
+longitud_carrera_nominal_actual_S;Stage;stage.tbl_pozo_produccion;122;Cargas y Carreras;Longitud de carrera nominal actual S (Sensor de posición lineal)
+longitud_horizontal;Stage;stage.tbl_pozo_reservas;160;Propiedades Dinámicas/Calculadas;Queda asignado al mismo ID
+max_rod_load_lb_act;Stage;stage.tbl_pozo_produccion;76;Cargas y Carreras;
+measure;;stage.landing_scada_data;;General;Tabla landing_scada_date
+medidor_produccion_agua;Stage;stage.tbl_pozo_produccion;99;Producción y Fluidos (Acumulados / Instantáneos);Producción y Fluidos (Acumulados / Instantáneos)
+medidor_produccion_fluido;Stage;stage.tbl_pozo_produccion;97;Producción y Fluidos (Acumulados / Instantáneos);Producción y Fluidos (Acumulados / Instantáneos)
+medidor_produccion_gas;Stage;stage.tbl_pozo_produccion;100;Producción y Fluidos (Acumulados / Instantáneos);Producción y Fluidos (Acumulados / Instantáneos)
+min_rod_load_lb_act;Stage;stage.tbl_pozo_produccion;77;Cargas y Carreras;
+moddate;;stage.landing_scada_data;;General;Tabla landing_scada_date
+modtime;;stage.landing_scada_data;;General;Tabla landing_scada_date
+monitor_carga_bomba;Stage;stage.tbl_pozo_produccion;74;Cargas y Carreras;
+gas_fill_monitor_pct_act;Stage;stage.tbl_pozo_produccion;96;Producción y Fluidos (Diarios);Producción y Fluidos (Diarios)
+monitor_llenado_liquido;Stage;stage.tbl_pozo_produccion;119;Producción y Fluidos (Diarios);Producción y Fluidos (Diarios)
+nivel_fluido_dinamico;Stage;stage.tbl_pozo_reservas;59;Misceláneos;
+nivel_fluido_flop;Stage;stage.tbl_pozo_produccion;60;Operación y Monitoreo del Equipo;
+nombre_pozo;Stage;stage.tbl_pozo_maestra;49;General / PK;
+nombre_yacimiento;Stage;stage.tbl_pozo_maestra;16;Completación y Geología;
+numero_software;Stage;stage.tbl_pozo_maestra;87;Equipos (Nominales);Equipos (Nominales)
+Oil Production, BOPD;;Consultar Con GA;7*;;Esta es la producción teórica/objetivo del reservorio.ID:108
+OPEN (Futuro);;;129*;abierto;Para futuro
+OPEN (Futuro);;;131-149*;abierto;para futuro
+otros_pvt;Stage;stage.tbl_pozo_reservas;31;Misceláneos;
+pais;Stage;stage.tbl_pozo_maestra;13;Identificación y Ubicación;
+permeabilidad_abosluta;Stage;stage.tbl_pozo_maestra;17;Completación y Geología;
+permeabilidad_horizontal;Stage;stage.tbl_pozo_maestra;28;Completación y Geología;
+permeabilidad_vertical;Stage;stage.tbl_pozo_reservas;162;Propiedades Dinámicas/Calculadas;Queda asignado al mismo ID
+peso_sarta_aire;Stage;stage.tbl_pozo_maestra;72;Cargas y Carreras;pasó de producción a maestra
+pump_intake_pressure_psi_act;Stage;stage.tbl_pozo_produccion;61;Presiones y Temperaturas; Antes PIP
+PIP, psi;;Duplicado;11*;;Calculado por IPR. (Tambien podría serr el PIP de referencia (Reservorio), diferente al ID 61 (PIP medido en Producción).)
+porcentaje_agua;Stage;stage.tbl_pozo_produccion;57;Producción y Fluidos (Diarios);Producción y Fluidos (Diarios)
+porcentaje_amperaje;Reporting;calculado;70;Reporting;Reporting. Calculado
+porcentaje_operacion_diario;Stage;stage.tbl_pozo_produccion;106;Indicadores de Eficiencia y POC;
+posicion_lineal;Stage;stage.tbl_pozo_produccion;92;Sensores y Otros;
+motor_power_hp_act;Stage;stage.tbl_pozo_produccion;66;Operación y Monitoreo del Equipo;
+potencia_medidor_diaria;Stage;stage.tbl_pozo_produccion;116;Acumuladores y Contadores;
+potencia_nominal_motor;Stage;stage.tbl_pozo_maestra;43;Equipos (Nominales);Equipos (Nominales)
+presion_burbujeo;Stage;stage.tbl_pozo_reservas;24;Presiones y Fluidos;
+well_head_pressure_psi_act;Stage;stage.tbl_pozo_produccion;54;Presiones y Temperaturas; Renombrado a well_head_pressure_psi_act para V4
+casing_head_pressure_psi_act;Stage;stage.tbl_pozo_produccion;55;Presiones y Temperaturas; Renombrado a casing_head_pressure_psi_act para V4
+presion_cilindro_hidraulico;Stage;stage.tbl_pozo_produccion;93;Presiones y Temperaturas;
+pump_discharge_pressure_psi_act;Stage;stage.tbl_pozo_produccion;62;Presiones y Temperaturas; Antes presion_descarga_bomba
+presion_estatica_yacimiento;Stage;stage.tbl_pozo_reservas;25;Presiones y Fluidos;
+presion_fondo_fluyente_critico;Stage;stage.tbl_pozo_reservas;27;Parámetros de Operación/Setpoints;Parámetros de Operación/Setpoints
+presion_inicial_yacimiento;Stage;stage.tbl_pozo_maestra;21;Propiedades del Yacimiento (Iniciales / Estáticas);Propiedades del Yacimiento (Iniciales / Estáticas)
+produccion_agua_diaria;Stage;stage.tbl_pozo_produccion;109;Producción y Fluidos (Diarios);Producción y Fluidos (Diarios)
+produccion_fluido_bpd_act;Stage;stage.tbl_pozo_produccion;107;Producción y Fluidos (Diarios);Producción y Fluidos (Diarios)
+produccion_gas_diaria;Stage;stage.tbl_pozo_produccion;110;Producción y Fluidos (Diarios);Producción y Fluidos (Diarios)
+produccion_id;;stage.tbl_pozo_produccion;;PK;PK
+produccion_petroleo_acumulada;Stage;stage.tbl_pozo_produccion;98;Producción y Fluidos (Acumulados / Instantáneos);Producción y Fluidos (Acumulados / Instantáneos)
+prod_petroleo_diaria_bpd;Stage;stage.tbl_pozo_produccion;108;Producción y Fluidos (Diarios);Producción y Fluidos (Diarios)
+profundidad_completacion;Stage;stage.tbl_pozo_maestra;2;Completación y Geología;
+profundidad_vertical_bomba;Stage;stage.tbl_pozo_maestra;39;Equipos (Nominales);Equipos (Nominales)
+profundidad_vertical_yacimiento;Stage;stage.tbl_pozo_maestra;38;Equipos (Nominales);Equipos (Nominales)
+pump_fill_monitor_pct;Stage;stage.tbl_pozo_produccion;64;Operación y Monitoreo del Equipo; Antes pump_fill_monitor
+Pwf actual (psi);Universal;Capa Universal;151;IPR;Esquema Universal. Calculo procedimiento IPR, icluir y cambiar  nombre en stage por : PWF_psi
+q_esperado;Stage;stage.tbl_pozo_reservas;152;Parámetros de Operación/Setpoints;Parámetros de Operación/Setpoints
+Qmax (bpd);Universal;-;150;IPR;Calculo procedimiento IPR
+radio_drenaje;Stage;stage.tbl_pozo_maestra;20;Completación y Geología;
+radio_equivalente;Stage;stage.tbl_pozo_reservas;159;Propiedades Dinámicas/Calculadas;Queda asignado al mismo ID
+radio_pozo;Stage;stage.tbl_pozo_maestra;19;Completación y Geología;
+region;Stage;stage.tbl_pozo_maestra;14;Identificación y Ubicación;
+Region /OPEN;;Duplicado;35*;;
+regla_no_cero_consumo;;stage.tbl_pozo_scada_dq;;General;
+regla_rango_spm;;stage.tbl_pozo_scada_dq;;General;
+regla_tolerancia_whp;;stage.tbl_pozo_scada_dq;;General;
+Reserva remanente;Reporting;calculado;130;Reporting;Calculado. Reporting
+reserva_id;;stage.tbl_pozo_reservas;;PK;PK
+reserva_inicial_teorica;Stage;stage.tbl_pozo_reservas;128;Dato Cliente;Incorporar al esquema
+resultado_dq;;stage.tbl_pozo_scada_dq;;General;
+rod_weight_buoyant_lb_act;Stage;stage.tbl_pozo_produccion;73;Cargas y Carreras;
+rpm_motor;Stage;stage.tbl_pozo_produccion;86;Operación y Monitoreo del Equipo;
+pump_avg_spm_act;Stage;stage.tbl_pozo_produccion;51;Operación y Monitoreo del Equipo; Antes spm_promedio
+spm_promedio_diario_medidor;Stage;stage.tbl_pozo_produccion;127;Acumuladores y Contadores;
+spm_solicitado_abajo;Stage;stage.tbl_pozo_produccion;53;Operación y Monitoreo del Equipo;
+spm_solicitado_arriba;Stage;stage.tbl_pozo_produccion;52;Operación y Monitoreo del Equipo;
+Static pressure at Hf, Psi;;Duplicado;40*;;Presión de burbujeo ID:24
+surface_rod_load;Stage;stage.tbl_pozo_produccion;156;Tarjetas de Dinamómetro;
+surface_rod_position;Stage;stage.tbl_pozo_produccion;155;Tarjetas de Dinamómetro;
+temperatura_aceite_tanque;;stage.tbl_pozo_produccion;84*;Presiones y Temperaturas (NO INSERTADO / COMENTADO);Dar de baja. NO tomar en cuenta. ID referencia=94
+temperatura_cabezal;Stage;stage.tbl_pozo_produccion;56;Presiones y Temperaturas;
+temperatura_motor;;stage.tbl_pozo_produccion;83*;Presiones y Temperaturas (NO INSERTADO / COMENTADO);A revisar. Dejar comentado en esquema. No eliminar. Pendiente estrategia de incorporacion. Por ahora no forma parte de la tabla real
+temperatura_tanque_aceite;Stage;stage.tbl_pozo_produccion;94;Presiones y Temperaturas;
+temperatura_yacimiento;Stage;stage.tbl_pozo_maestra;22;Propiedades del Yacimiento (Iniciales / Estáticas);Propiedades del Yacimiento (Iniciales / Estáticas)
+tiempo_actual_drive;Stage;stage.tbl_pozo_produccion;95;Operación y Monitoreo del Equipo;
+tiempo_operacion_medidor_acum;Stage;stage.tbl_pozo_produccion;103;Acumuladores y Contadores;
+tiempo_parada_poc_diario;Stage;stage.tbl_pozo_produccion;114;Indicadores de Eficiencia y POC;
+tiempo_parada_poc_medidor_acum;Stage;stage.tbl_pozo_produccion;126;Acumuladores y Contadores;
+timestamp_lectura;Stage;stage.tbl_pozo_produccion;50;General / PK;
+timestamp_lectura;;stage.tbl_pozo_scada_dq;;General;
+tipo_levantamiento;Stage;stage.tbl_pozo_maestra;37;Equipos (Nominales);Equipos (Nominales)
+tipo_pozo;Stage;stage.tbl_pozo_maestra;3;Completación y Geología;
+unit_id;;stage.landing_scada_data;;General;Tabla landing_scada_date
+uso_energia_medidor;;;117*;Indicadores de Eficiencia y POC (NO INSERTADO / COMENTADO);Indicadores de Eficiencia y POC (NO INSERTADO / COMENTADO).  Uso Energía (Duplicada con71, se puede omitir si es redundante, pero ID 117 es única en Formato 1).
+var_id;;stage.landing_scada_data;;General;Tabla landing_scada_date
+viscosidad_crudo;Stage;stage.tbl_pozo_reservas;18;Presiones y Fluidos;
+viscosidad_superficie;Stage;stage.tbl_pozo_reservas;29;Presiones y Fluidos;
+voltaje_nominal;Stage;stage.tbl_pozo_maestra;45;Equipos (Nominales);Equipos (Nominales)
+Water Production, BWPD;;Consultar Con GA;8*;;ID: 109.
+wc_critico;Stage;stage.tbl_pozo_reservas;32;Parámetros de Operación/Setpoints;Parámetros de Operación/Setpoints
+well_id;Stage;stage.tbl_pozo_maestra;1;General / PK;
+well_id;Stage;stage.tbl_pozo_reservas;1;PK;General / PK
+well_id;Stage;stage.tbl_pozo_produccion;1;PK;

@@ -1,0 +1,656 @@
+{
+  "timestamp": "2026-02-07T16:21:41.161510",
+  "total_paneles": 5,
+  "paneles": {
+    "Transversal": {
+      "total_elementos": 8,
+      "elementos": [
+        {
+          "id": "32",
+          "nombre": "Logo Hydrog",
+          "linea": 1
+        },
+        {
+          "id": "36",
+          "nombre": "Date",
+          "linea": 5
+        },
+        {
+          "id": "37",
+          "nombre": "Customer",
+          "linea": 6
+        },
+        {
+          "id": "38",
+          "nombre": "Region",
+          "linea": 7
+        },
+        {
+          "id": "39",
+          "nombre": "Field",
+          "linea": 8
+        },
+        {
+          "id": "40",
+          "nombre": "Well",
+          "linea": 9
+        },
+        {
+          "id": "41",
+          "nombre": "Shift Type",
+          "linea": 10
+        },
+        {
+          "id": "42",
+          "nombre": "Period",
+          "linea": 11
+        }
+      ]
+    },
+    "transversal": {
+      "total_elementos": 2,
+      "elementos": [
+        {
+          "id": "34",
+          "nombre": "\"Production\"",
+          "linea": 2
+        },
+        {
+          "id": "33",
+          "nombre": "\"Hydralift T4 Surface Operations\"",
+          "linea": 3
+        }
+      ]
+    },
+    "Production": {
+      "total_elementos": 46,
+      "elementos": [
+        {
+          "id": "34",
+          "nombre": "\"Production\"",
+          "linea": 2
+        },
+        {
+          "id": "1",
+          "nombre": "Pump Average SPM",
+          "linea": 12
+        },
+        {
+          "id": "1",
+          "nombre": "Pump Average SPM(target)",
+          "linea": 13
+        },
+        {
+          "id": "1",
+          "nombre": "Pump Average SPM(var_pct)",
+          "linea": 14
+        },
+        {
+          "id": "1",
+          "nombre": "Pump Average SPM(status color)",
+          "linea": 15
+        },
+        {
+          "id": "2",
+          "nombre": "Pump Stroke Length(in)(current value)",
+          "linea": 16
+        },
+        {
+          "id": "2",
+          "nombre": "Pump Stroke Length(in)(target)",
+          "linea": 17
+        },
+        {
+          "id": "2",
+          "nombre": "Pump Stroke Length(in)(var)",
+          "linea": 18
+        },
+        {
+          "id": "2",
+          "nombre": "Pump Stroke Length(in)(status color)",
+          "linea": 19
+        },
+        {
+          "id": "3",
+          "nombre": "pump_fill_monitor(%)",
+          "linea": 20
+        },
+        {
+          "id": "3",
+          "nombre": "pump_fill_monitor(%)(target)",
+          "linea": 21
+        },
+        {
+          "id": "3",
+          "nombre": "pump_fill_monitor(%)(var)",
+          "linea": 22
+        },
+        {
+          "id": "3",
+          "nombre": "pump_fill_monitor(%)(status color)",
+          "linea": 23
+        },
+        {
+          "id": "4",
+          "nombre": "Gas Fill Monitor",
+          "linea": 24
+        },
+        {
+          "id": "4",
+          "nombre": "Gas Fill Monitor(target)",
+          "linea": 25
+        },
+        {
+          "id": "4",
+          "nombre": "Gas Fill Monitor(label)",
+          "linea": 26
+        },
+        {
+          "id": "4",
+          "nombre": "Gas Fill Monitor(status color)",
+          "linea": 27
+        },
+        {
+          "id": "5",
+          "nombre": "Lift Efficiency(%)",
+          "linea": 28
+        },
+        {
+          "id": "5",
+          "nombre": "Lift Efficiency(%)(target)",
+          "linea": 29
+        },
+        {
+          "id": "5",
+          "nombre": "Lift Efficiency(%)(severity label)",
+          "linea": 30
+        },
+        {
+          "id": "\"6-21\"",
+          "nombre": "Max. Road Load(lb)",
+          "linea": 31
+        },
+        {
+          "id": "6",
+          "nombre": "Min. Road Load(lb)",
+          "linea": 32
+        },
+        {
+          "id": "6",
+          "nombre": "Max. Pump Load(lb)",
+          "linea": 33
+        },
+        {
+          "id": "6",
+          "nombre": "Min. Pump Load(lb)",
+          "linea": 34
+        },
+        {
+          "id": "6",
+          "nombre": "Rod_weight In Air(lb)",
+          "linea": 35
+        },
+        {
+          "id": "6",
+          "nombre": "Bouyant Rod Weight(lb)",
+          "linea": 36
+        },
+        {
+          "id": "6",
+          "nombre": "API Maximum Fluid Load(lb)",
+          "linea": 37
+        },
+        {
+          "id": "6",
+          "nombre": "Fluid Level(TVD)",
+          "linea": 38
+        },
+        {
+          "id": "6",
+          "nombre": "Pump_Depth",
+          "linea": 39
+        },
+        {
+          "id": "6",
+          "nombre": "Formation_depth",
+          "linea": 40
+        },
+        {
+          "id": "7",
+          "nombre": "Qact/Qf",
+          "linea": 41
+        },
+        {
+          "id": "7",
+          "nombre": "Qo",
+          "linea": 42
+        },
+        {
+          "id": "7",
+          "nombre": "Qw",
+          "linea": 43
+        },
+        {
+          "id": "7",
+          "nombre": "Qact/Qf",
+          "linea": 44
+        },
+        {
+          "id": "7",
+          "nombre": "Qo",
+          "linea": 45
+        },
+        {
+          "id": "7",
+          "nombre": "Qw",
+          "linea": 46
+        },
+        {
+          "id": "8",
+          "nombre": "Carta Dinagráfica",
+          "linea": 47
+        },
+        {
+          "id": "9",
+          "nombre": "Pwf",
+          "linea": 48
+        },
+        {
+          "id": "9",
+          "nombre": "WHP",
+          "linea": 49
+        },
+        {
+          "id": "9",
+          "nombre": "CHP",
+          "linea": 50
+        },
+        {
+          "id": "9",
+          "nombre": "PIP",
+          "linea": 51
+        },
+        {
+          "id": "9",
+          "nombre": "PDP",
+          "linea": 52
+        },
+        {
+          "id": "10",
+          "nombre": "IPR",
+          "linea": 53
+        },
+        {
+          "id": "11",
+          "nombre": "Np(bbl)",
+          "linea": 54
+        },
+        {
+          "id": "11",
+          "nombre": "RR(bbl)",
+          "linea": 55
+        },
+        {
+          "id": "11",
+          "nombre": "Total Res.(bbl)",
+          "linea": 56
+        }
+      ]
+    },
+    "Hydralift T4 Surface Operations": {
+      "total_elementos": 42,
+      "elementos": [
+        {
+          "id": "33",
+          "nombre": "\"Hydralift T4 Surface Operations\"",
+          "linea": 3
+        },
+        {
+          "id": "1",
+          "nombre": "Pump Average SPM",
+          "linea": 12
+        },
+        {
+          "id": "12",
+          "nombre": "Road Strok Length (in)(Rated)",
+          "linea": 57
+        },
+        {
+          "id": "12",
+          "nombre": "Road Strok Length (in)(Current)",
+          "linea": 58
+        },
+        {
+          "id": "13",
+          "nombre": "Hydraulic Load Rated(Load klb)",
+          "linea": 59
+        },
+        {
+          "id": "13",
+          "nombre": "Hydraulic Load Rated(%Load)",
+          "linea": 60
+        },
+        {
+          "id": "14",
+          "nombre": "Tank Fluid Temperature (F)",
+          "linea": 61
+        },
+        {
+          "id": "14",
+          "nombre": "Tank Fluid Temperature (F)(target)",
+          "linea": 62
+        },
+        {
+          "id": "14",
+          "nombre": "Tank Fluid Temperature (F)(severity label)",
+          "linea": 63
+        },
+        {
+          "id": "15",
+          "nombre": "Motor power (Hp)(Rated)",
+          "linea": 64
+        },
+        {
+          "id": "15",
+          "nombre": "Motor power (Hp)(Current)",
+          "linea": 65
+        },
+        {
+          "id": "16",
+          "nombre": "Motor current(A)",
+          "linea": 66
+        },
+        {
+          "id": "16",
+          "nombre": "Motor current(A)(grafico tendencia)",
+          "linea": 67
+        },
+        {
+          "id": "16",
+          "nombre": "Motor current(A)(avg week)",
+          "linea": 68
+        },
+        {
+          "id": "16",
+          "nombre": "Motor current(A)(rate)",
+          "linea": 69
+        },
+        {
+          "id": "16",
+          "nombre": "Motor current(A)(target)",
+          "linea": 70
+        },
+        {
+          "id": "17",
+          "nombre": "Motor On status",
+          "linea": 71
+        },
+        {
+          "id": "17",
+          "nombre": "Uptime(%)",
+          "linea": 72
+        },
+        {
+          "id": "\"17-28\"",
+          "nombre": "Uptime(target)",
+          "linea": 73
+        },
+        {
+          "id": "17",
+          "nombre": "Uptime(color-form)",
+          "linea": 74
+        },
+        {
+          "id": "18",
+          "nombre": "Daily Down time",
+          "linea": 75
+        },
+        {
+          "id": "18",
+          "nombre": "Daily Down time(target)",
+          "linea": 76
+        },
+        {
+          "id": "18",
+          "nombre": "Daily Down time(color-formt)",
+          "linea": 77
+        },
+        {
+          "id": "19",
+          "nombre": "Tilt Alarm(coordenada x)",
+          "linea": 78
+        },
+        {
+          "id": "19",
+          "nombre": "Tilt Alarm(coordenada y)",
+          "linea": 79
+        },
+        {
+          "id": "19",
+          "nombre": "Tilt Alarm(alarma)",
+          "linea": 80
+        },
+        {
+          "id": "19",
+          "nombre": "Tilt Alarm(falla)",
+          "linea": 81
+        },
+        {
+          "id": "19",
+          "nombre": "Tilt Alarm(Flag))",
+          "linea": 82
+        },
+        {
+          "id": "20",
+          "nombre": " Hydralift unit Load(%)",
+          "linea": 83
+        },
+        {
+          "id": "20",
+          "nombre": " Hydralift unit Load(%)(target_low)",
+          "linea": 84
+        },
+        {
+          "id": "20",
+          "nombre": " Hydralift unit Load(%)(target_high)",
+          "linea": 85
+        },
+        {
+          "id": "21",
+          "nombre": "Current Road Load(%)",
+          "linea": 86
+        },
+        {
+          "id": "21",
+          "nombre": "Rated Road Load(%)(nominal)",
+          "linea": 87
+        },
+        {
+          "id": "21",
+          "nombre": "Current Road Load(%)(target_low)",
+          "linea": 88
+        },
+        {
+          "id": "21",
+          "nombre": "Current Road Load(%)(target_high))",
+          "linea": 89
+        },
+        {
+          "id": "22",
+          "nombre": "Daily POC Count",
+          "linea": 90
+        },
+        {
+          "id": "22",
+          "nombre": "Daily POC Count",
+          "linea": 91
+        },
+        {
+          "id": "23",
+          "nombre": "MTBF",
+          "linea": 93
+        },
+        {
+          "id": "\"23-31\"",
+          "nombre": "MTBF(target)",
+          "linea": 95
+        },
+        {
+          "id": "23",
+          "nombre": "MTBF(%var)",
+          "linea": 96
+        },
+        {
+          "id": "23",
+          "nombre": "MTBF(color alert)",
+          "linea": 97
+        },
+        {
+          "id": "28",
+          "nombre": "Uptime(%)(day-line chart)",
+          "linea": 114
+        }
+      ]
+    },
+    "Business KPIs": {
+      "total_elementos": 27,
+      "elementos": [
+        {
+          "id": "35",
+          "nombre": "\"Business KPIs\"",
+          "linea": 4
+        },
+        {
+          "id": "17",
+          "nombre": "Uptime(%)",
+          "linea": 72
+        },
+        {
+          "id": "\"17-28\"",
+          "nombre": "Uptime(target)",
+          "linea": 73
+        },
+        {
+          "id": "17",
+          "nombre": "Uptime(color-form)",
+          "linea": 74
+        },
+        {
+          "id": "31",
+          "nombre": "MTBF(linechart-day)",
+          "linea": 92
+        },
+        {
+          "id": "23",
+          "nombre": "MTBF",
+          "linea": 93
+        },
+        {
+          "id": "31",
+          "nombre": "MTBF(baseline)",
+          "linea": 94
+        },
+        {
+          "id": "\"23-31\"",
+          "nombre": "MTBF(target)",
+          "linea": 95
+        },
+        {
+          "id": "23",
+          "nombre": "MTBF(%var)",
+          "linea": 96
+        },
+        {
+          "id": "23",
+          "nombre": "MTBF(color alert)",
+          "linea": 97
+        },
+        {
+          "id": "24",
+          "nombre": "Vol.Eff(%)(current)",
+          "linea": 98
+        },
+        {
+          "id": "27",
+          "nombre": "Vol.Eff(%)(trend)",
+          "linea": 99
+        },
+        {
+          "id": "27",
+          "nombre": "Vol.Eff(%)(baseline)",
+          "linea": 100
+        },
+        {
+          "id": "\"24-27\"",
+          "nombre": "Vol.Eff(%)(target)",
+          "linea": 101
+        },
+        {
+          "id": "24",
+          "nombre": "Vol.Eff(%)( color form)",
+          "linea": 102
+        },
+        {
+          "id": "29",
+          "nombre": "Kwh/bbl",
+          "linea": 103
+        },
+        {
+          "id": "25",
+          "nombre": "Kwh/bbl(current)",
+          "linea": 104
+        },
+        {
+          "id": "29",
+          "nombre": "Kwh/bbl(baseline)",
+          "linea": 105
+        },
+        {
+          "id": "\"25-29\"",
+          "nombre": "Kwh/bbl(target)",
+          "linea": 106
+        },
+        {
+          "id": "\"26-27-28-29-30-31\"",
+          "nombre": "SAT_Event_Marker",
+          "linea": 107
+        },
+        {
+          "id": "25",
+          "nombre": "Kwh/bbl(color form)",
+          "linea": 108
+        },
+        {
+          "id": "30",
+          "nombre": "AI Accuracy(daily)",
+          "linea": 109
+        },
+        {
+          "id": "26",
+          "nombre": "AI Accuracy(current)",
+          "linea": 110
+        },
+        {
+          "id": "30",
+          "nombre": "AI Accuracy(bseline)",
+          "linea": 111
+        },
+        {
+          "id": "\"26-30\"",
+          "nombre": "AI Accuracy(target)",
+          "linea": 112
+        },
+        {
+          "id": "26",
+          "nombre": "AI Accuracy(satatus color)",
+          "linea": 113
+        },
+        {
+          "id": "28",
+          "nombre": "Uptime(%)(day-line chart)",
+          "linea": 114
+        }
+      ]
+    }
+  }
+}

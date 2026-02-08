@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<data-sources>
+    <data-source id="postgres-audit-bp010" provider="postgresql" driver="postgres-jdbc" name="BP010 Audit - localhost:5433" save-password="true" show-system-objects="true" read-only="false">
+        <connection host="localhost" port="5433" server="" database="etl_data" url="jdbc:postgresql://localhost:5433/etl_data" type="dev">
+            <properties>
+                <property name="connectTimeout" value="20"/>
+                <property name="loginTimeout" value="0"/>
+                <property name="timezone" value="UTC"/>
+            </properties>
+        </connection>
+        <auth username="audit" password="audit" save-password="true"/>
+        <configured-by-driver>true</configured-by-driver>
+    </data-source>
+</data-sources>

@@ -1,0 +1,45 @@
+# BP010 Data Pipelines - Entorno de auditoría aislado
+# No usar credenciales de producción. Puerto host 5433 para no colisionar con PG local.
+
+services:
+  postgres-audit:
+    image: postgres:15
+    container_name: bp010-audit-db
+    environment:
+      POSTGRES_USER: audit
+      POSTGRES_PASSWORD: audit
+      POSTGRES_DB: etl_data
+      TZ: UTC
+      PGTZ: UTC
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_audit_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U audit -d etl_data" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - bp010-audit-net
+
+  adminer:
+    image: adminer
+    container_name: bp010-audit-ui
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres-audit
+    networks:
+      - bp010-audit-net
+    depends_on:
+      postgres-audit:
+        condition: service_healthy
+
+volumes:
+  postgres_audit_data:
+
+networks:
+  bp010-audit-net:
+    driver: bridge

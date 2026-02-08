@@ -1,0 +1,165 @@
+2026-02-08 12:16:04,507 - INFO - >>> INICIANDO CREACIËN DE ESQUEMAS <<<
+2026-02-08 12:16:04,547 - INFO - Exec: V4__referencial_schema_redesign.sql...
+2026-02-08 12:16:04,681 - INFO - \u2705 V4__referencial_schema_redesign.sql completado.
+2026-02-08 12:16:04,682 - INFO - Exec: V4__stage_schema_redesign.sql...
+2026-02-08 12:16:04,789 - INFO - \u2705 V4__stage_schema_redesign.sql completado.
+2026-02-08 12:16:04,789 - INFO - Exec: V1__universal_schema.sql...
+2026-02-08 12:16:04,816 - INFO - \u2705 V1__universal_schema.sql completado.
+2026-02-08 12:16:04,816 - INFO - Exec: V4__reporting_schema_redesign.sql...
+2026-02-08 12:16:04,983 - INFO - \u2705 V4__reporting_schema_redesign.sql completado.
+2026-02-08 12:16:04,983 - INFO - Exec: V6.1__historical_reporting_engine_v4.sql...
+2026-02-08 12:16:05,033 - INFO - \u2705 V6.1__historical_reporting_engine_v4.sql completado.
+2026-02-08 12:16:05,033 - INFO - Exec: V6.2__dq_engine_v4.sql...
+2026-02-08 12:16:05,036 - INFO - \u2705 V6.2__dq_engine_v4.sql completado.
+2026-02-08 12:16:05,036 - INFO - Exec: V6.3__sync_dim_pozo_targets_v4.sql...
+2026-02-08 12:16:05,038 - INFO - \u2705 V6.3__sync_dim_pozo_targets_v4.sql completado.
+2026-02-08 12:16:05,038 - INFO - Exec: V6__stored_procedures_v4_compatible.sql...
+2026-02-08 12:16:05,085 - INFO - \u2705 V6__stored_procedures_v4_compatible.sql completado.
+2026-02-08 12:16:05,086 - INFO - Exec: V4__referencial_seed_data.sql...
+2026-02-08 12:16:05,269 - INFO - \u2705 V4__referencial_seed_data.sql completado.
+2026-02-08 12:16:05,284 - INFO - >>> BD INICIALIZADA CORRECTAMENTE <<<
+=== SYNC REFERENCIAL MASTER ===
+[OK] Referencial sincronizado correctamente.
+2026-02-08 12:16:07,258 - INFO - ====================================================
+2026-02-08 12:16:07,258 - INFO - >>> INGESTA H═BRIDA + LANDING SCADA (SQL)
+2026-02-08 12:16:07,258 - INFO - ====================================================
+2026-02-08 12:16:07,258 - INFO - \U0001f4c2 Ejecutando SQL: tbl_maestra_202602021632.sql
+2026-02-08 12:16:07,291 - INFO - \u2705 OK: tbl_maestra_202602021632.sql
+2026-02-08 12:16:07,291 - INFO - \U0001f4c2 Ejecutando SQL: tbl_pozo_produccion_202602021632.sql
+2026-02-08 12:16:07,296 - INFO - \u2705 OK: tbl_pozo_produccion_202602021632.sql
+2026-02-08 12:16:07,297 - INFO - \U0001f4d8 Ingestando RESERVAS desde Excel...
+2026-02-08 12:16:07,473 - INFO - \u2705 Reservas insertadas correctamente desde Excel.
+2026-02-08 12:16:07,473 - INFO - \U0001f4c2 Ejecutando SQL: landing_scada_data_202602021604.sql
+2026-02-08 12:16:07,526 - INFO - \u2705 OK: landing_scada_data_202602021604.sql
+2026-02-08 12:16:07,526 - INFO - >>> INGESTA COMPLETA <<<
+============================================================
+STARTING MASTER PIPELINE ORCHESTRATION
+Python Executable: auditor\Scripts\python.exe
+============================================================
+
+>>> 1. Re-initializing Schemas (Full Reset)...
+[OK] Init Schemas completed.
+
+>>> 1.5 Loading Referencial Master (Variables, Rangos, Mapas SCADA)...
+[OK] Referencial Master Loaded.
+
+>>> 2. Ingesting Real Telemetry (SQL Dumps)...
+[OK] Ingestion completed.
+
+>>> 3. Loading Universal Logic Engine (V5)...
+[SKIP] V5 Logic skipped (Covered by V6 in init_schemas).
+
+>>> 3.1 Running Data Quality Engine (V5 DQ)...
+[OK] Data Quality Validation completed.
+
+>>> 3.5 Loading Reporting Engine V2...
+[SKIP] Reporting Engine V2 skipped (Covered by V6.1 in init_schemas).
+
+>>> 5. Running Reporting Load (Daily, Hourly, Monthly)...
+[OK] History loaded.
+
+>>> 5.5 Loading Business KPIs...
+[OK] Business KPIs loaded.
+
+>>> 6. Updating Snapshot (dataset_current_values)...
+[ERROR] Query Failed: CALL reporting.actualizar_current_values_v4();
+Details: (psycopg2.errors.UndefinedColumn) column "prod_petroleo_diaria_bpd_act" of relation "dataset_current_values" does not exist
+LINE 28:         prod_petroleo_diaria_bpd_act,
+                 ^
+QUERY:  INSERT INTO reporting.dataset_current_values AS target (
+        well_id,
+        nombre_pozo,
+        cliente,
+        region,
+        campo,
+        ultima_actualizacion,
+        
+        -- Mapping V4 Renamed Columns & Standard Columns
+        well_head_pressure_psi_act,      -- Antes whp_psi
+        casing_head_pressure_psi_act,    -- Antes chp_psi
+        pump_intake_pressure_psi_act,    -- Antes pip_psi
+        pump_discharge_pressure_psi_act, -- Antes pdp_psi
+        
+        spm_actual,                      -- MANTENER (Legacy/Display)
+        pump_avg_spm_act,                -- Antes spm_actual / V4 Standard
+        
+        pump_fill_monitor_pct,
+        gas_fill_monitor_pct_act,
+        rod_weight_buoyant_lb_act,
+        
+        motor_power_hp_act,              -- Antes potencia_hp
+        motor_current_a_act,             -- Antes amp_motor
+        
+        -- Nuevos campos V4
+        motor_running_flag,
+        produccion_fluido_bpd_act,
+        prod_petroleo_diaria_bpd_act,
+        produccion_agua_diaria_bpd_act,
+        
+        updated_at
+    )
+    SELECT DISTINCT ON (m.well_id)
+        m.well_id,
+        m.nombre_pozo,
+        m.cliente,
+        m.region,
+        m.campo,
+        p.timestamp_lectura,
+        
+        p.presion_cabezal,          -- well_head_pressure_psi_act
+        p.presion_casing,           -- casing_head_pressure_psi_act
+        p.PIP,                      -- pump_intake_pressure_psi_act
+        p.presion_descarga_bomba,   -- pump_discharge_pressure_psi_act
+        
+        p.spm_promedio,             -- spm_actual
+        p.spm_promedio,             -- pump_avg_spm_act (Mismo origen por ahora)
+        
+        p.pump_fill_monitor,        -- pump_fill_monitor_pct
+        p.monitor_llenado_gas,      -- gas_fill_monitor_pct_act
+        p.rod_weight_buoyant,       -- rod_weight_buoyant_lb_act
+        
+        p.potencia_actual_motor,    -- motor_power_hp_act
+        p.current_amperage,         -- motor_current_a_act
+        
+        p.estado_motor,             -- motor_running_flag
+        p.produccion_fluido_diaria, -- produccion_fluido_bpd_act
+        p.produccion_petroleo_diaria, -- prod_petroleo_diaria_bpd_act
+        p.produccion_agua_diaria,   -- produccion_agua_diaria_bpd_act
+        
+        NOW()
+    FROM stage.tbl_pozo_maestra m
+    LEFT JOIN stage.tbl_pozo_produccion p
+        ON m.well_id = p.well_id
+    ORDER BY m.well_id, p.timestamp_lectura DESC
+    ON CONFLICT (well_id) DO UPDATE SET 
+        nombre_pozo                = EXCLUDED.nombre_pozo,
+        cliente                    = EXCLUDED.cliente,
+        region                     = EXCLUDED.region,
+        campo                      = EXCLUDED.campo,
+        
+        well_head_pressure_psi_act      = EXCLUDED.well_head_pressure_psi_act,
+        casing_head_pressure_psi_act    = EXCLUDED.casing_head_pressure_psi_act,
+        pump_intake_pressure_psi_act    = EXCLUDED.pump_intake_pressure_psi_act,
+        pump_discharge_pressure_psi_act = EXCLUDED.pump_discharge_pressure_psi_act,
+        
+        spm_actual                 = EXCLUDED.spm_actual,
+        pump_avg_spm_act           = EXCLUDED.pump_avg_spm_act, 
+        
+        pump_fill_monitor_pct      = EXCLUDED.pump_fill_monitor_pct,
+        gas_fill_monitor_pct_act   = EXCLUDED.gas_fill_monitor_pct_act,
+        rod_weight_buoyant_lb_act  = EXCLUDED.rod_weight_buoyant_lb_act,
+        
+        motor_power_hp_act         = EXCLUDED.motor_power_hp_act,
+        motor_current_a_act        = EXCLUDED.motor_current_a_act,
+        
+        motor_running_flag         = EXCLUDED.motor_running_flag,
+        produccion_fluido_bpd_act       = EXCLUDED.produccion_fluido_bpd_act,
+        prod_petroleo_diaria_bpd_act    = EXCLUDED.prod_petroleo_diaria_bpd_act,
+        produccion_agua_diaria_bpd_act  = EXCLUDED.produccion_agua_diaria_bpd_act,
+        
+        ultima_actualizacion       = EXCLUDED.ultima_actualizacion,
+        updated_at                 = NOW()
+CONTEXT:  PL/pgSQL function reporting.actualizar_current_values_v4() line 4 at SQL statement
+
+[SQL: CALL reporting.actualizar_current_values_v4();]
+(Background on this error at: https://sqlalche.me/e/20/f405)
