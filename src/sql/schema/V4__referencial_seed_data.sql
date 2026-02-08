@@ -39,7 +39,7 @@ INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_log
 ('casing_head_pressure_psi_act', 'SENSOR', 55),
 ('min_rod_load_lb_act', 'SENSOR', 77),
 ('max_rod_load_lb_act', 'SENSOR', 76),
-('motor_current_a_act', 'SENSOR', 44),           -- ID 44 según CSV DQ (Alineado)
+('motor_current_a_act', 'SENSOR', 67),           -- ID 67 según aclaración (Valores Actuales)
 ('pump_fill_monitor_pct', 'SENSOR', 64),
 ('well_stroke_position_in', 'SENSOR', 155),
 ('surface_rod_load_lb', 'SENSOR', 156),
@@ -52,9 +52,9 @@ INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_log
 ('damage_factor', 'YACIMIENTO', NULL),           -- S/I
 ('formation_volume_factor', 'YACIMIENTO', 30),
 ('water_specific_gravity', 'YACIMIENTO', 63),
-('absolute_permeability_md', 'YACIMIENTO', 28),
+('absolute_permeability_md', 'YACIMIENTO', 17),  -- ID 17 según aclaración
 ('vertical_permeability_md', 'YACIMIENTO', 162),
-('horizontal_permeability_md', 'YACIMIENTO', NULL), -- Conflicto ID 28 con Absolute
+('horizontal_permeability_md', 'YACIMIENTO', 28), -- ID 28 según aclaración
 ('bubble_point_pressure_psi', 'YACIMIENTO', 24),
 ('critical_fbhp_psi', 'YACIMIENTO', 27),
 ('presion_estatica_yacimiento', 'YACIMIENTO', 25),
@@ -70,7 +70,7 @@ INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_log
 ('well_type', 'PARAMETRO', 3),
 ('horizontal_length_ft', 'DISEÑO', 160),
 ('tubing_anchor_depth_ft', 'DISEÑO', 78),
-('max_fluid_load_lb', 'DISEÑO', 75);             -- ID 75 según CSV (Alineado)
+('api_max_fluid_load_lb', 'DISEÑO', 75);         -- Renombrado e ID 75 según aclaración
 
 -- BLOQUE D: KPIs & Calculados (Alineados a CSV)
 INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1) VALUES
@@ -98,7 +98,7 @@ INSERT INTO referencial.tbl_dq_rules (variable_id, valor_min, valor_max, latenci
 SELECT variable_id, 0.0001, NULL, 2, 'WARNING', 'CSV DQ Rule: ' || nombre_tecnico
 FROM referencial.tbl_maestra_variables 
 WHERE nombre_tecnico IN (
-    'formation_thickness_ft', 'damage_factor', 'formation_volume_factor', 'max_fluid_load_lb',
+    'formation_thickness_ft', 'damage_factor', 'formation_volume_factor', 'api_max_fluid_load_lb',
     'water_specific_gravity', 'absolute_permeability_md', 'vertical_permeability_md', 'horizontal_permeability_md',
     'bubble_point_pressure_psi', 'well_head_pressure_psi_act', 'flowing_bottom_hole_pressure_psi',
     'critical_fbhp_psi', 'casing_head_pressure_psi_act', 'presion_estatica_yacimiento',
