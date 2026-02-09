@@ -1,0 +1,146 @@
+﻿Stage: Nombre Columna;Stage: Unidad;Stage: Observaciones;ID_formato1vfinal
+well_id;;;1
+profundidad_completacion;ft;Profundidad total de completación del pozo;2
+tipo_pozo;lista;Dato fijo del completamiento;3
+coordenadas_pozo;Grados, min, seg;Coordenadas geográficas del pozo;4
+api_number;N/A;Número API del pozo (identificador legal/regulatorio);5
+fecha_registro;Segun formato VSD;Fecha del dato (formato VSD);6
+produccion_petroleo;bpd;Producción diaria de petróleo;7
+produccion_agua;bpd;Producción diaria de agua;8
+produccion_gas;scf/D;Producción diaria de gas;9
+gravedad_API;°API o Adimensional;Dato se actualiza con pruebas, pero tiene poca variación;10
+cliente;N/A;Nombre del cliente u operadora;12
+pais;N/A;País de ubicación;13
+region;N/A;Región de ubicación;14
+campo;N/A;Campo petrolero;15
+nombre_yacimiento;N/A;Nombre del yacimiento productor;16
+permeabilidad_abosluta;mili Darcy;Métodos teóricos;17
+viscosidad_crudo;Centipoises;Laboratorio;18
+radio_pozo;Pies;Especificaciones técnicas;19
+radio_drenaje;Pies;Cálculo teórico;20
+presion_inicial_yacimiento;Psi;Presión inicial del yacimiento;21
+temperatura_yacimiento;F;Temperatura del yacimiento;22
+espesor_formacion;Pies;Datos geológicos;23
+presion_burbujeo;PSI;Medición continua calibrada. Id=41posible duplicado;24
+presion_estatica_yacimiento;PSI;Medición indirecta.;25
+intervalo_disparos;ft;Intervalo de disparos o cañoneo;26
+presion_fondo_fluyente_critico;PSI;Dato fijo entregado por el cliente;27
+permeabilidad_horizontal;mili Darcy;Métodos teóricos;28
+viscosidad_superficie;cP;Viscosidad del fluido en superficie;29
+factor_volumetrico;By/BN;Laboratorio;30
+otros_pvt;N/A;Datos PVT adicionales;31
+wc_critico;Fracion (0-1);Porcentaje de agua crítico (definido por cliente);32
+diametro_embolo_bomba;In;Diámetro del émbolo(pistón) de la bomba;33
+campo_abierto_1;N/A;Campo abierto para uso futuro;34
+campo_abierto_2;N/A;Campo abierto para uso futuro;35
+campo_abierto_3;N/A;Campo abierto para uso futuro;36
+tipo_levantamiento;N/A;Sistema de levantamiento artificial;37
+profundidad_vertical_yacimiento;Pies;Dato fijo del completamiento;38
+profundidad_vertical_bomba;Pies;Medición continua;39
+presion_estatica_hf;Psi;Presión estática a la profundidad Hf;40
+presion_burbuja_prod;Psi;Presión de burbuja (dato de producción);41
+longitud_carrera_nominal;In;Longitud de carrera nominal de la unidad de bombeo;42
+potencia_nominal_motor;Hp;Potencia nominal del motor;43
+corriente_nominal_motor;AMP;Corriente nominal del motor;44
+voltaje_nominal;VAC;Voltaje nominal de operación;45
+carga_nominal_unidad;Lb;Carga nominal de la unidad Hydralift;46
+carga_minima_nominal_sarta;Lb;Carga mínima nominal de la sarta de varillas;47
+llenado_bomba_minimo;%;Porcentaje de llenado mínimo de la bomba (setpoint);48
+nombre_pozo;N/A;Nombre del pozo;49
+fecha_registro;Formato Drive;Fecha del dato (formato Drive);50
+spm_promedio;SPM;Emboladas por minuto promedio de la bomba;51
+spm_solicitado_arriba;SPM;SPM solicitados (carrera ascendente);52
+spm_solicitado_abajo;SPM;SPM solicitados (carrera descendente);53
+presion_cabezal;PSI;Medición manual periódica;54
+presion_casing;PSI;Dato de prueba de pozo;55
+temperatura_cabezal;F;Temperatura en cabezal (Tubing Head Temperature);56
+porcentaje_agua;%;Dato variable por pozo, típicamente 1.0 para agua pura;57
+contenido_finos;mg/L;Contenido de finos en el fluido;58
+nivel_fluido_dinamico;Pies;Medición continua o periódica ;59
+nivel_fluido_flop;ft;Nivel de fluido medido (Fluid Level Over Pump);60
+PIP_Pump Intake Pressure;Psi;Calculado: id: 11.// Variador : id=61;61
+presion_descarga_bomba;Psi;Presión de descarga de la bomba;62
+gravedad_especifica_agua;Adimensional;Medición continua o periódica;63
+pump_fill_monitor;%;Porcentaje de llenado de la bomba;64
+BLPD;Barriles/día o BPD;Puede ser medido o calculado. Id=97 y 107 similares;65
+potencia_actual_motor;HP;Potencia actual consumida por el motor;66
+current_amperage;A;A=amperio;67
+carrera_actual_unidad;In;Longitud de carrera actual de la unidad;68
+carrera_actual_bomba;In;Longitud de carrera actual en la bomba;69
+porcentaje_amperaje;AMP;Porcentaje de amperaje actual vs nominal;70
+kwh_por_barril;kwh/bl;Consumo energético (Kilowatt-hora por barril);71
+peso_sarta_aire;Lb;Peso de la sarta de varillas en el aire;72
+rod_weight_buoyant;Lb;Peso de la sarta en flotación(peso aparente de la arta cuando esta sumergida en un fluido);73
+monitor_carga_bomba;Lb;Monitor de carga en la bomba;74
+carga_maxima_fluido_api;Lb;Carga máxima de fluido según estándar API;75
+maximum_rod_load;Lb;carga máxima que soporta el vástago (sarta de varillas) durante el ciclo de bombeo, generalmente en el punto más alto de la carrera;76
+minimum_rod_load;Lb;carga mínima que soporta el vástago durante el ciclo de bombeo, generalmente en el punto más bajo de la carrera;77
+anchor_vertical_depth;Pies;Profundidad del ancla;78
+carga_caja_engranajes;N/A;Porcentaje de carga de la caja de engranajes;79
+porcentaje_carga_unidad;%;Cálculo: Carga Máx / Carga Nominal Unidad;80
+porcentaje_carga_varillas;%;Cálculo: Carga Máx / Carga Nominal Varillas;81
+inclinacion_vastago;Grados?;Inclinación del vástago (Hydralift);82
+temperatura_motor;F;Temperatura del motor;83
+temperatura_aceite_tanque;F;Temperatura del aceite en el tanque de la bomba;84
+frecuencia_nominal_motor;Hz;Frecuencia nominal del motor;85
+rpm_motor;RPM;Revoluciones por minuto actuales del motor;86
+numero_software;N/A;Versión o número de software del controlador;87
+inclinacion_cilindro_x;N/A;Inclinación del cilindro en eje X;88
+inclinacion_cilindro_y;N/A;Inclinación del cilindro en eje Y;89
+alerta_inclinacion_grados;N/A;Grados de inclinación para advertencia;90
+falla_inclinacion_grados;N/A;Grados de inclinación para falla;91
+posicion_lineal;N/A;Posición lineal;92
+presion_cilindro_hidraulico;N/A;Valor de presión del cilindro hidráulico;93
+temperatura_tanque_aceite;N/A;Temperatura del tanque de aceite;94
+tiempo_actual_drive;N/A;Tiempo actual del drive/variador;95
+monitor_llenado_gas;%;Monitor de llenado de gas (interferencia de gas);96
+medidor_produccion_fluido;bpd;Medidor de producción de fluido (total);97
+produccion_petroleo_acumulada;bpd;Producción acumulada de petróleo;98
+medidor_produccion_agua;bpd;Medidor de producción de agua;99
+medidor_produccion_gas;mcf;Medidor de producción de gas;100
+contador_emboladas;strokes;Contador de emboladas de la bomba;101
+horas_operacion_acumuladas;hh.mm;Horas de operación acumuladas;102
+tiempo_operacion_medidor_acum;hh.mm;Tiempo de operación acumulado del medidor;103
+energia_medidor_acumulada;kwh;Energía acumulada (medidor);104
+emboladas_medidor_acumuladas;strokes;Emboladas acumuladas (medidor);105
+porcentaje_operacion_diario;%;Porcentaje de tiempo de operación diario;106
+produccion_fluido_diaria;bbl;Producción de fluido diaria;107
+produccion_petroleo_diaria;bbl;Producción de petróleo diaria;108
+produccion_agua_diaria;bbl;Producción de agua diaria;109
+produccion_gas_diaria;scf;Producción de gas diaria;110
+emboladas_diarias;Strokes/D;Número de emboladas por día;111
+llenado_promedio_diario;%;Porcentaje de llenado promedio diario;112
+fuga_diaria;bl;Fuga diaria estimada;113
+tiempo_parada_poc_diario;hh.mm;Tiempo de parada diario (Pump-Off Controller);114
+conteo_poc_diario;num;Conteo de eventos POC diarios;115
+potencia_medidor_diaria;HP;Potencia diaria (medidor);116
+uso_energia_medidor;kwh/bbl;Uso de energía (medidor);117
+eficiencia_levantamiento;%;Eficiencia del sistema de levantamiento;118
+monitor_llenado_liquido;%;Monitor de llenado de líquido;119
+estado_motor;N/A;Estado del motor (Encendido/Apagado);120
+carrera_bomba_api;inches;Longitud de carrera de la bomba (API);121
+carrera_varilla_s;In;Longitud de carrera nominal actual (S);122
+emboladas_arranque_poc;strokes;Emboladas durante el arranque (POC);123
+emboladas_espera_poc;strokes;Emboladas en modo de espera (POC);124
+conteo_poc_medidor_acum;N/A;Conteo POC acumulado (medidor);125
+tiempo_parada_poc_medidor_acum;N/A;Tiempo de parada POC acumulado (medidor);126
+spm_promedio_diario_medidor;SPM;SPM promedio diario (medidor);127
+q_maximo;bpd;Caudal máximo potencial (calculado, IPR);150
+presion_fondo_fluyente;PSI;Puede ser medido o calculado;151
+q_esperado;bpd;Caudal esperado (calculado);152
+relacion_pwf_pe;%;Relación entre presión de fondo fluyente y estática;153
+relacion_qf_qmax;%;Relación entre caudal actual y caudal máximo;154
+surface_rod_position;;;155
+surface_rod_load;;;156
+downhole_pump_position;;;157
+downhole_pump_load;;;158
+radio_equivalente;Pies;Cálculo teórico;N/A
+longitud_horizontal;Pie;Dato fijo del completamiento;160
+factor_dano;Adimensional;Interpretación de pruebas;N/A
+permeabilidad_vertical;mili Darcy;Métodos teóricos;N/A
+well_id;;;
+well_id;;;
+date;;;
+date;;;
+date;;;
+date;;;

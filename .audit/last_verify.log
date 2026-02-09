@@ -1,0 +1,8 @@
+--- VERIFICACIËN FINAL DE CONTEOS ---
+tbl_dq_rules: 33 filas
+  [WARN] Fallo en DQ rules. Se esperaban 35.
+tbl_maestra_variables: 130 filas
+tbl_ref_estados_operativos: 5 filas
+tbl_ref_paneles_bi: 4 filas
+tbl_ref_unidades: 0 filas
+tbl_reglas_consistencia: 6 filas

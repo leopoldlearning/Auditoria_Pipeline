@@ -1,41 +1,63 @@
-/* CARGA SEMILLA V4 (ITERACIÓN 11) - SINCRONIZADA CON FUENTE DE VERDAD */
+2026-02-08 18:25:15,018 - INFO - >>> INICIANDO CREACIËN DE ESQUEMAS <<<
+2026-02-08 18:25:15,066 - INFO - Forzando eliminaci¾n de esquemas antiguos...
+2026-02-08 18:25:15,075 - INFO - Exec: V4__referencial_schema_redesign.sql...
+2026-02-08 18:25:15,226 - INFO - \u2705 V4__referencial_schema_redesign.sql completado.
+2026-02-08 18:25:15,228 - INFO - Exec: V4__stage_schema_redesign.sql...
+2026-02-08 18:25:15,294 - INFO - \u2705 V4__stage_schema_redesign.sql completado.
+2026-02-08 18:25:15,294 - INFO - Exec: V1__universal_schema.sql...
+2026-02-08 18:25:15,328 - INFO - \u2705 V1__universal_schema.sql completado.
+2026-02-08 18:25:15,328 - INFO - Exec: V4__reporting_schema_redesign.sql...
+2026-02-08 18:25:15,461 - INFO - \u2705 V4__reporting_schema_redesign.sql completado.
+2026-02-08 18:25:15,461 - INFO - Exec: V6.1__historical_reporting_engine_v4.sql...
+2026-02-08 18:25:15,515 - INFO - \u2705 V6.1__historical_reporting_engine_v4.sql completado.
+2026-02-08 18:25:15,515 - INFO - Exec: V6.2__dq_engine_v4.sql...
+2026-02-08 18:25:15,518 - INFO - \u2705 V6.2__dq_engine_v4.sql completado.
+2026-02-08 18:25:15,518 - INFO - Exec: V6.3__sync_dim_pozo_targets_v4.sql...
+2026-02-08 18:25:15,521 - INFO - \u2705 V6.3__sync_dim_pozo_targets_v4.sql completado.
+2026-02-08 18:25:15,522 - INFO - Exec: V6__stored_procedures_v4_compatible.sql...
+2026-02-08 18:25:15,565 - INFO - \u2705 V6__stored_procedures_v4_compatible.sql completado.
+2026-02-08 18:25:15,565 - INFO - Exec: V4__referencial_seed_data.sql...
+2026-02-08 18:25:15,849 - ERROR - \u274c Error en V4__referencial_seed_data.sql: (psycopg2.errors.UniqueViolation) duplicate key value violates unique constraint "tbl_maestra_variables_id_formato1_key"
+DETAIL:  Key (id_formato1)=(28) already exists.
+
+[SQL: /* CARGA SEMILLA V4 (FIXED) - ALINEACIËN TOTAL A 35 REGLAS DQ */
 TRUNCATE TABLE referencial.tbl_ref_estados_operativos RESTART IDENTITY CASCADE;
 INSERT INTO referencial.tbl_ref_estados_operativos (codigo_estado, color_hex, descripcion, nivel_severidad, prioridad_visual) VALUES
-('NORMAL', '#00C851', 'Estable', 0, 5), ('WARNING', '#FFBB33', 'Advertencia', 1, 3), ('CRITICAL', '#FF4444', 'Crítico', 3, 1);
+('NORMAL', '#00C851', 'Estable', 0, 5), ('WARNING', '#FFBB33', 'Advertencia', 1, 3), ('CRITICAL', '#FF4444', 'CrÝtico', 3, 1);
 
 TRUNCATE TABLE referencial.tbl_ref_paneles_bi RESTART IDENTITY CASCADE;
-INSERT INTO referencial.tbl_ref_paneles_bi (nombre_panel) VALUES ('Business KPIs');
+INSERT INTO referencial.tbl_ref_paneles_bi (nombre_panel) VALUES ('Business Kpis');
 INSERT INTO referencial.tbl_ref_paneles_bi (nombre_panel) VALUES ('Hydralift T4 Surface Operations');
 INSERT INTO referencial.tbl_ref_paneles_bi (nombre_panel) VALUES ('Production');
 INSERT INTO referencial.tbl_ref_paneles_bi (nombre_panel) VALUES ('Transversal');
 
 TRUNCATE TABLE referencial.tbl_maestra_variables RESTART IDENTITY CASCADE;
 INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
-VALUES ('espesor_formacion', 'YACIMIENTO', 23, NULL, NULL);
+VALUES ('formation_thickness_ft', 'YACIMIENTO', 23, NULL, NULL);
 INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
-VALUES ('factor_dano', 'YACIMIENTO', NULL, NULL, NULL);
+VALUES ('damage_factor', 'YACIMIENTO', NULL, NULL, NULL);
 INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
-VALUES ('factor_volumetrico', 'YACIMIENTO', 30, NULL, NULL);
+VALUES ('formation_volume_factor', 'YACIMIENTO', 30, NULL, NULL);
 INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
-VALUES ('carga_maxima_fluido_api', 'SENSOR', 75, (SELECT panel_id FROM referencial.tbl_ref_paneles_bi WHERE nombre_panel = 'Production' LIMIT 1), '6');
+VALUES ('api_max_fluid_load_lb', 'DISEÐO', 75, (SELECT panel_id FROM referencial.tbl_ref_paneles_bi WHERE nombre_panel = 'Production' LIMIT 1), '6');
 INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
-VALUES ('gravedad_especifica_agua', 'YACIMIENTO', 63, NULL, NULL);
+VALUES ('water_specific_gravity', 'YACIMIENTO', 63, NULL, NULL);
 INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
-VALUES ('permeabilidad_abosluta', 'YACIMIENTO', 17, NULL, NULL);
+VALUES ('absolute_permeability_md', 'YACIMIENTO', 28, NULL, NULL);
 INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
-VALUES ('permeabilidad_vertical', 'YACIMIENTO', 162, NULL, NULL);
+VALUES ('vertical_permeability_md', 'YACIMIENTO', 162, NULL, NULL);
 INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
-VALUES ('permeabilidad_horizontal', 'YACIMIENTO', 28, NULL, NULL);
+VALUES ('horizontal_permeability_md', 'YACIMIENTO', 28, NULL, NULL);
 INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
 VALUES ('porcentaje_agua', 'KPI', 57, NULL, NULL);
 INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
-VALUES ('presion_burbujeo', 'YACIMIENTO', 24, NULL, NULL);
+VALUES ('bubble_point_pressure_psi', 'SENSOR', 24, NULL, NULL);
 INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
 VALUES ('well_head_pressure_psi_act', 'SENSOR', 54, (SELECT panel_id FROM referencial.tbl_ref_paneles_bi WHERE nombre_panel = 'Production' LIMIT 1), '9');
 INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
-VALUES ('pwf_actual_psi', 'SENSOR', 151, (SELECT panel_id FROM referencial.tbl_ref_paneles_bi WHERE nombre_panel = 'Production' LIMIT 1), '9');
+VALUES ('flowing_bottom_hole_pressure_psi', 'SENSOR', 151, (SELECT panel_id FROM referencial.tbl_ref_paneles_bi WHERE nombre_panel = 'Production' LIMIT 1), '9');
 INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
-VALUES ('presion_fondo_fluyente_critico', 'SENSOR', 27, NULL, NULL);
+VALUES ('critical_fbhp_psi', 'SENSOR', 27, NULL, NULL);
 INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
 VALUES ('casing_head_pressure_psi_act', 'SENSOR', 55, (SELECT panel_id FROM referencial.tbl_ref_paneles_bi WHERE nombre_panel = 'Production' LIMIT 1), '9');
 INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
@@ -43,35 +65,35 @@ VALUES ('presion_estatica_yacimiento', 'YACIMIENTO', 25, NULL, NULL);
 INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
 VALUES ('prod_petroleo_diaria_bpd', 'KPI', 108, (SELECT panel_id FROM referencial.tbl_ref_paneles_bi WHERE nombre_panel = 'Production' LIMIT 1), '7');
 INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
-VALUES ('profundidad_vertical_bomba', 'DISEÑO', 39, (SELECT panel_id FROM referencial.tbl_ref_paneles_bi WHERE nombre_panel = 'Production' LIMIT 1), '6');
+VALUES ('profundidad_vertical_bomba', 'SENSOR', 39, (SELECT panel_id FROM referencial.tbl_ref_paneles_bi WHERE nombre_panel = 'Production' LIMIT 1), '6');
 INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
-VALUES ('profundidad_vertical_yacimiento', 'DISEÑO', 38, (SELECT panel_id FROM referencial.tbl_ref_paneles_bi WHERE nombre_panel = 'Production' LIMIT 1), '6');
+VALUES ('profundidad_vertical_yacimiento', 'SENSOR', 38, (SELECT panel_id FROM referencial.tbl_ref_paneles_bi WHERE nombre_panel = 'Production' LIMIT 1), '6');
 INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
-VALUES ('radio_equivalente', 'YACIMIENTO', NULL, NULL, NULL);
+VALUES ('equivalent_radius_ft', 'DISEÐO', NULL, NULL, NULL);
 INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
-VALUES ('radio_drenaje', 'YACIMIENTO', 20, NULL, NULL);
+VALUES ('drainage_radius_ft', 'DISEÐO', 20, NULL, NULL);
 INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
-VALUES ('radio_pozo', 'YACIMIENTO', 19, NULL, NULL);
+VALUES ('wellbore_radius_ft', 'DISEÐO', 19, NULL, NULL);
 INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
-VALUES ('viscosidad_superficie', 'YACIMIENTO', 29, NULL, NULL);
+VALUES ('crude_oil_viscosity_cp', 'YACIMIENTO', 29, NULL, NULL);
 INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
-VALUES ('tipo_pozo', 'YACIMIENTO', 3, NULL, NULL);
+VALUES ('well_type', 'DISEÐO', 3, NULL, NULL);
 INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
-VALUES ('longitud_horizontal', 'YACIMIENTO', 160, NULL, NULL);
+VALUES ('horizontal_length_ft', 'DISEÐO', 160, NULL, NULL);
 INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
-VALUES ('nivel_fluido_dinamico', 'SENSOR', 59, (SELECT panel_id FROM referencial.tbl_ref_paneles_bi WHERE nombre_panel = 'Production' LIMIT 1), '6');
+VALUES ('corrected_dynamic_fluid_level_ft', 'KPI', 59, (SELECT panel_id FROM referencial.tbl_ref_paneles_bi WHERE nombre_panel = 'Production' LIMIT 1), '6');
 INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
 VALUES ('min_rod_load_lb_act', 'SENSOR', 77, (SELECT panel_id FROM referencial.tbl_ref_paneles_bi WHERE nombre_panel = 'Production' LIMIT 1), '6');
 INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
-VALUES ('surface_rod_position', 'SENSOR', 155, NULL, NULL);
+VALUES ('well_stroke_position_in', 'SENSOR', 155, NULL, NULL);
 INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
-VALUES ('surface_rod_load', 'SENSOR', 156, NULL, NULL);
+VALUES ('surface_rod_load_lb', 'SENSOR', 156, NULL, NULL);
 INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
-VALUES ('downhole_pump_position', 'SENSOR', 157, NULL, NULL);
+VALUES ('downhole_pump_position_in', 'SENSOR', 157, NULL, NULL);
 INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
-VALUES ('downhole_pump_load', 'SENSOR', 158, NULL, NULL);
+VALUES ('downhole_pump_load_lb', 'SENSOR', 158, NULL, NULL);
 INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
-VALUES ('anchor_vertical_depth', 'SENSOR', 78, NULL, NULL);
+VALUES ('tubing_anchor_depth_ft', 'DISEÐO', 78, NULL, NULL);
 INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
 VALUES ('pump_fill_monitor_pct', 'SENSOR', 64, (SELECT panel_id FROM referencial.tbl_ref_paneles_bi WHERE nombre_panel = 'Production' LIMIT 1), '3');
 INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
@@ -79,13 +101,25 @@ VALUES ('rod_weight_buoyant_lb_act', 'SENSOR', 73, (SELECT panel_id FROM referen
 INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
 VALUES ('max_rod_load_lb_act', 'SENSOR', 76, (SELECT panel_id FROM referencial.tbl_ref_paneles_bi WHERE nombre_panel = 'Production' LIMIT 1), '6-21');
 INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
-VALUES ('corriente_nominal_motor', 'DISEÑO', 44, (SELECT panel_id FROM referencial.tbl_ref_paneles_bi WHERE nombre_panel = 'Hydralift T4 Surface Operations' LIMIT 1), '16');
+VALUES ('motor_current_a_act', 'SENSOR', 44, (SELECT panel_id FROM referencial.tbl_ref_paneles_bi WHERE nombre_panel = 'Hydralift T4 Surface Operations' LIMIT 1), '16');
+INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
+VALUES ('pump_avg_spm_act', 'SENSOR', 51, (SELECT panel_id FROM referencial.tbl_ref_paneles_bi WHERE nombre_panel = 'Hydralift T4 Surface Operations' LIMIT 1), '1');
+INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
+VALUES ('motor_power_hp_act', 'SENSOR', 66, (SELECT panel_id FROM referencial.tbl_ref_paneles_bi WHERE nombre_panel = 'Hydralift T4 Surface Operations' LIMIT 1), '15');
+INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
+VALUES ('motor_running_flag', 'SENSOR', 120, (SELECT panel_id FROM referencial.tbl_ref_paneles_bi WHERE nombre_panel = 'Hydralift T4 Surface Operations' LIMIT 1), '17');
+INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
+VALUES ('carga_varilla_pct', 'SENSOR', 81, NULL, NULL);
+INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
+VALUES ('carga_unidad_pct', 'SENSOR', 80, NULL, NULL);
+INSERT INTO referencial.tbl_maestra_variables (nombre_tecnico, clasificacion_logica, id_formato1, panel_id, ident_dashboard_element)
+VALUES ('kpi_mtbf', 'KPI', NULL, (SELECT panel_id FROM referencial.tbl_ref_paneles_bi WHERE nombre_panel = 'Hydralift T4 Surface Operations' LIMIT 1), '23-31');
 
 TRUNCATE TABLE referencial.tbl_dq_rules RESTART IDENTITY CASCADE;
 INSERT INTO referencial.tbl_dq_rules (variable_id, valor_min, valor_max, latencia_max_segundos, severidad, origen_regla)
-SELECT variable_id, 0.0001, NULL, 5, 'WARNING', 'Alineado a 02_reglas_calidad.csv' FROM referencial.tbl_maestra_variables WHERE nombre_tecnico NOT IN ('porcentaje_agua', 'pump_fill_monitor_pct');
+SELECT variable_id, 0.0001, NULL, 300, 'WARNING', 'Alineado a V4 Specification' FROM referencial.tbl_maestra_variables WHERE nombre_tecnico NOT IN ('porcentaje_agua', 'pump_fill_monitor_pct', 'motor_running_flag');
 INSERT INTO referencial.tbl_dq_rules (variable_id, valor_min, valor_max, latencia_max_segundos, severidad, origen_regla)
-SELECT variable_id, 0.0, 100.0, 5, 'WARNING', 'Alineado a 02_reglas_calidad.csv' FROM referencial.tbl_maestra_variables WHERE nombre_tecnico IN ('porcentaje_agua', 'pump_fill_monitor_pct');
+SELECT variable_id, 0.0, 100.0, 300, 'WARNING', 'Alineado a V4 Specification' FROM referencial.tbl_maestra_variables WHERE nombre_tecnico IN ('porcentaje_agua', 'pump_fill_monitor_pct');
 
 TRUNCATE TABLE referencial.tbl_reglas_consistencia RESTART IDENTITY CASCADE;
 INSERT INTO referencial.tbl_reglas_consistencia (codigo_rc, descripcion, variable_a_id, operador, variable_b_id)
@@ -93,10 +127,11 @@ SELECT 'RC-001', 'Carga Max > Min', (SELECT variable_id FROM referencial.tbl_mae
 INSERT INTO referencial.tbl_reglas_consistencia (codigo_rc, descripcion, variable_a_id, operador, variable_b_id)
 SELECT 'RC-002', 'Carga Max > Peso Flotante', (SELECT variable_id FROM referencial.tbl_maestra_variables WHERE nombre_tecnico = 'max_rod_load_lb_act'), '>', (SELECT variable_id FROM referencial.tbl_maestra_variables WHERE nombre_tecnico = 'rod_weight_buoyant_lb_act');
 INSERT INTO referencial.tbl_reglas_consistencia (codigo_rc, descripcion, variable_a_id, operador, variable_b_id)
-SELECT 'RC-003', 'Gradiente Presión', (SELECT variable_id FROM referencial.tbl_maestra_variables WHERE nombre_tecnico = 'well_head_pressure_psi_act'), '<', (SELECT variable_id FROM referencial.tbl_maestra_variables WHERE nombre_tecnico = 'flowing_bottom_hole_pressure_psi');
+SELECT 'RC-003', 'Gradiente Presi¾n', (SELECT variable_id FROM referencial.tbl_maestra_variables WHERE nombre_tecnico = 'flowing_bottom_hole_pressure_psi'), '>', (SELECT variable_id FROM referencial.tbl_maestra_variables WHERE nombre_tecnico = 'well_head_pressure_psi_act');
 INSERT INTO referencial.tbl_reglas_consistencia (codigo_rc, descripcion, variable_a_id, operador, variable_b_id)
-SELECT 'RC-004', 'Inflow', (SELECT variable_id FROM referencial.tbl_maestra_variables WHERE nombre_tecnico = 'flowing_bottom_hole_pressure_psi'), '<', (SELECT variable_id FROM referencial.tbl_maestra_variables WHERE nombre_tecnico = 'presion_estatica_yacimiento');
+SELECT 'RC-004', 'Inflow (Static > FBHP)', (SELECT variable_id FROM referencial.tbl_maestra_variables WHERE nombre_tecnico = 'presion_estatica_yacimiento'), '>', (SELECT variable_id FROM referencial.tbl_maestra_variables WHERE nombre_tecnico = 'flowing_bottom_hole_pressure_psi');
 INSERT INTO referencial.tbl_reglas_consistencia (codigo_rc, descripcion, variable_a_id, operador, variable_b_id)
-SELECT 'RC-005', 'Verticality', (SELECT variable_id FROM referencial.tbl_maestra_variables WHERE nombre_tecnico = 'profundidad_vertical_bomba'), '<', (SELECT variable_id FROM referencial.tbl_maestra_variables WHERE nombre_tecnico = 'profundidad_vertical_yacimiento');
+SELECT 'RC-005', 'Verticality (Formation > Pump)', (SELECT variable_id FROM referencial.tbl_maestra_variables WHERE nombre_tecnico = 'profundidad_vertical_yacimiento'), '>', (SELECT variable_id FROM referencial.tbl_maestra_variables WHERE nombre_tecnico = 'profundidad_vertical_bomba');
 INSERT INTO referencial.tbl_reglas_consistencia (codigo_rc, descripcion, variable_a_id, operador, variable_b_id)
-SELECT 'RC-006', 'Radiality', (SELECT variable_id FROM referencial.tbl_maestra_variables WHERE nombre_tecnico = 'wellbore_radius_ft'), '<', (SELECT variable_id FROM referencial.tbl_maestra_variables WHERE nombre_tecnico = 'drainage_radius_ft');
+SELECT 'RC-006', 'Radiality (Drainage > Wellbore)', (SELECT variable_id FROM referencial.tbl_maestra_variables WHERE nombre_tecnico = 'drainage_radius_ft'), '>', (SELECT variable_id FROM referencial.tbl_maestra_variables WHERE nombre_tecnico = 'wellbore_radius_ft');]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)

@@ -14,61 +14,45 @@ BEGIN
 
     UPDATE reporting.dim_pozo dp
     SET 
-        mtbf_target = (
-            SELECT target_value
-            FROM referencial.tbl_limites_pozo lim
-            JOIN referencial.tbl_maestra_variables var ON lim.variable_id = var.variable_id
-            WHERE lim.pozo_id = dp.pozo_id
-              AND var.nombre_tecnico = 'kpi_mtbf'
+        mtbf_target = COALESCE(
+            (SELECT target_value FROM referencial.tbl_limites_pozo lim 
+             JOIN referencial.tbl_maestra_variables var ON lim.variable_id = var.variable_id
+             WHERE lim.pozo_id = dp.pozo_id AND var.nombre_tecnico = 'kpi_mtbf'),
+            (SELECT target_value FROM referencial.tbl_limites_pozo lim 
+             JOIN referencial.tbl_maestra_variables var ON lim.variable_id = var.variable_id
+             WHERE lim.pozo_id = 1 AND var.nombre_tecnico = 'kpi_mtbf')
         ),
-        mtbf_baseline = (
-            SELECT baseline_value
-            FROM referencial.tbl_limites_pozo lim
-            JOIN referencial.tbl_maestra_variables var ON lim.variable_id = var.variable_id
-            WHERE lim.pozo_id = dp.pozo_id
-              AND var.nombre_tecnico = 'kpi_mtbf'
+        pump_spm_target = COALESCE(
+            (SELECT target_value FROM referencial.tbl_limites_pozo lim 
+             JOIN referencial.tbl_maestra_variables var ON lim.variable_id = var.variable_id
+             WHERE lim.pozo_id = dp.pozo_id AND var.nombre_tecnico = 'pump_avg_spm_act'),
+            (SELECT target_value FROM referencial.tbl_limites_pozo lim 
+             JOIN referencial.tbl_maestra_variables var ON lim.variable_id = var.variable_id
+             WHERE lim.pozo_id = 1 AND var.nombre_tecnico = 'pump_avg_spm_act')
         ),
-        pump_spm_target = (
-            SELECT target_value
-            FROM referencial.tbl_limites_pozo lim
-            JOIN referencial.tbl_maestra_variables var ON lim.variable_id = var.variable_id
-            WHERE lim.pozo_id = dp.pozo_id
-              AND var.nombre_tecnico = 'pump_avg_spm_act' -- V4 Name (antes spm_promedio)
+        pump_fill_monitor_target = COALESCE(
+            (SELECT target_value FROM referencial.tbl_limites_pozo lim 
+             JOIN referencial.tbl_maestra_variables var ON lim.variable_id = var.variable_id
+             WHERE lim.pozo_id = dp.pozo_id AND var.nombre_tecnico = 'pump_fill_monitor_pct'),
+            (SELECT target_value FROM referencial.tbl_limites_pozo lim 
+             JOIN referencial.tbl_maestra_variables var ON lim.variable_id = var.variable_id
+             WHERE lim.pozo_id = 1 AND var.nombre_tecnico = 'pump_fill_monitor_pct')
         ),
-        pump_fill_monitor_target = (
-            SELECT target_value
-            FROM referencial.tbl_limites_pozo lim
-            JOIN referencial.tbl_maestra_variables var ON lim.variable_id = var.variable_id
-            WHERE lim.pozo_id = dp.pozo_id
-              AND var.nombre_tecnico = 'pump_fill_monitor_pct' -- V4 Name (antes llenado_bomba_pct/pump_fill_monitor)
+        road_load_status_eff_low = COALESCE(
+            (SELECT min_warning FROM referencial.tbl_limites_pozo lim 
+             JOIN referencial.tbl_maestra_variables var ON lim.variable_id = var.variable_id
+             WHERE lim.pozo_id = dp.pozo_id AND var.nombre_tecnico = 'carga_varilla_pct'),
+            (SELECT min_warning FROM referencial.tbl_limites_pozo lim 
+             JOIN referencial.tbl_maestra_variables var ON lim.variable_id = var.variable_id
+             WHERE lim.pozo_id = 1 AND var.nombre_tecnico = 'carga_varilla_pct')
         ),
-        road_load_status_eff_low = (
-            SELECT min_warning
-            FROM referencial.tbl_limites_pozo lim
-            JOIN referencial.tbl_maestra_variables var ON lim.variable_id = var.variable_id
-            WHERE lim.pozo_id = dp.pozo_id
-              AND var.nombre_tecnico = 'carga_varilla_pct' 
-        ),
-        road_load_status_eff_high = (
-            SELECT max_warning
-            FROM referencial.tbl_limites_pozo lim
-            JOIN referencial.tbl_maestra_variables var ON lim.variable_id = var.variable_id
-            WHERE lim.pozo_id = dp.pozo_id
-              AND var.nombre_tecnico = 'carga_varilla_pct'
-        ),
-        hydraulic_load_status_eff_low = (
-            SELECT min_warning
-            FROM referencial.tbl_limites_pozo lim
-            JOIN referencial.tbl_maestra_variables var ON lim.variable_id = var.variable_id
-            WHERE lim.pozo_id = dp.pozo_id
-              AND var.nombre_tecnico = 'carga_unidad_pct'
-        ),
-        hydraulic_load_status_eff_high = (
-            SELECT max_warning
-            FROM referencial.tbl_limites_pozo lim
-            JOIN referencial.tbl_maestra_variables var ON lim.variable_id = var.variable_id
-            WHERE lim.pozo_id = dp.pozo_id
-              AND var.nombre_tecnico = 'carga_unidad_pct'
+        road_load_status_eff_high = COALESCE(
+            (SELECT max_warning FROM referencial.tbl_limites_pozo lim 
+             JOIN referencial.tbl_maestra_variables var ON lim.variable_id = var.variable_id
+             WHERE lim.pozo_id = dp.pozo_id AND var.nombre_tecnico = 'carga_varilla_pct'),
+            (SELECT max_warning FROM referencial.tbl_limites_pozo lim 
+             JOIN referencial.tbl_maestra_variables var ON lim.variable_id = var.variable_id
+             WHERE lim.pozo_id = 1 AND var.nombre_tecnico = 'carga_varilla_pct')
         );
 
     RAISE NOTICE 'Sincronización dimensión pozo completada.';

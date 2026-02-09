@@ -4,7 +4,7 @@ S/I;2;Damage Factor ;Cliente;v2;Dimensionless;Semi-Fijo;>0;< 2 s;;
 30;3;Formation Volume Factor;Cliente;v2;By/BN;Semi-Fijo;>0;< 2 s;;
 75;4;API Maximum Fluid Load;Cliente, SCADA;;Lb;Semi-Fijo;>0;< 2 s;;
 63;5;Water specific gravity;Cliente;;Dimensionless;Fijo;>0;< 2 s;;
-28;6;Absolute Permeability;Cliente;v2;mD (milidarcys);Semi-Fijo;>0;< 2 s;;
+17;6;Absolute Permeability;Cliente;v2;mD (milidarcys);Semi-Fijo;>0;< 2 s;;
 162;7;Vertical Permeability;Cliente;v2;mD (milidarcys);Semi-Fijo;>0;< 2 s;;
 28;8;Horizontal Permeability;Cliente;v2;mD (milidarcys);Semi-Fijo;>0;< 2 s;;
 57;9;Water cut;Cliente, SCADA;;%;Variable;0-100%;< 2 s;;

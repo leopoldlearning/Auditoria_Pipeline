@@ -1,22 +1,29 @@
-/*
+2026-02-08 22:10:11,566 - INFO - >>> INICIANDO CREACIËN DE ESQUEMAS <<<
+2026-02-08 22:10:11,679 - INFO - Forzando eliminaci¾n de esquemas antiguos...
+2026-02-08 22:10:11,685 - INFO - Exec: V4__referencial_schema_redesign.sql...
+2026-02-08 22:10:11,850 - ERROR - \u274c Error en V4__referencial_schema_redesign.sql: (psycopg2.errors.UndefinedTable) relation "stage.tbl_pozo_maestra" does not exist
+LINE 148:     SELECT well_id as pozo_id FROM stage.tbl_pozo_maestra
+                                             ^
+
+[SQL: /*
 --------------------------------------------------------------------------------
 -- ESQUEMA REFERENCIAL V4 (MASTER STANDARD & INTEGRADO)
--- DESCRIPCIÓN: Configuración centralizada de Reglas, Límites y Estándares Visuales.
+-- DESCRIPCIËN: Configuraci¾n centralizada de Reglas, LÝmites y Estßndares Visuales.
 -- INCLUYE: 
 --   1. Tablas Dimensionales (Unidades, Estados, Paneles)
 --   2. Maestra de Variables (Alineada a Reporting V4)
---   3. Mapa SCADA (Integración Stage - Anterior referencial_master.sql)
---   4. Reglas de Negocio (Límites Pozo, DQ, Consistencia)
---   5. Funciones Utilitarias (Motores de Cálculo Semáforo)
+--   3. Mapa SCADA (Integraci¾n Stage - Anterior referencial_master.sql)
+--   4. Reglas de Negocio (LÝmites Pozo, DQ, Consistencia)
+--   5. Funciones Utilitarias (Motores de Cßlculo Semßforo)
 --------------------------------------------------------------------------------
 */
 
--- 1. GESTIÓN DE ESQUEMA (Reset Limpio)
+-- 1. GESTIËN DE ESQUEMA (Reset Limpio)
 DROP SCHEMA IF EXISTS referencial CASCADE;
 CREATE SCHEMA referencial;
 
 -- =============================================================================
--- 2. TABLAS DIMENSIONALES (CATÁLOGOS)
+-- 2. TABLAS DIMENSIONALES (CAT┴LOGOS)
 -- =============================================================================
 
 -- 2.1 Unidades de Medida
@@ -26,7 +33,7 @@ CREATE TABLE referencial.tbl_ref_unidades (
     descripcion VARCHAR(100)
 );
 
--- 2.2 Estados Operativos (EL CORAZÓN DEL SEMÁFORO)
+-- 2.2 Estados Operativos (EL CORAZËN DEL SEM┴FORO)
 -- Define los colores y severidades para toda la empresa.
 CREATE TABLE referencial.tbl_ref_estados_operativos (
     estado_id SERIAL PRIMARY KEY,
@@ -48,8 +55,8 @@ CREATE TABLE referencial.tbl_ref_paneles_bi (
 -- 2.4 Maestra de Variables
 CREATE TABLE referencial.tbl_maestra_variables (
     variable_id SERIAL PRIMARY KEY,
-    id_formato1 INTEGER,          -- ID legado del Excel/CSV (Permite duplicados según lista usuario)
-    nombre_tecnico VARCHAR(100) NOT NULL UNIQUE, -- Clave para búsquedas (ej. 'well_head_pressure_psi_act')
+    id_formato1 INTEGER,          -- ID legado del Excel/CSV (Permite duplicados seg·n lista usuario)
+    nombre_tecnico VARCHAR(100) NOT NULL UNIQUE, -- Clave para b·squedas (ej. 'well_head_pressure_psi_act')
     tabla_origen VARCHAR(50),            -- 'stage.tbl_pozo_produccion'
     clasificacion_logica VARCHAR(50),    -- 'SENSOR', 'CALCULADO', 'KPI'
     volatilidad VARCHAR(20),             -- 'ALTA', 'BAJA'
@@ -57,10 +64,10 @@ CREATE TABLE referencial.tbl_maestra_variables (
     
     -- Metadatos para Dashboard (Alineado a hoja_validacion.csv)
     panel_id INTEGER REFERENCES referencial.tbl_ref_paneles_bi(panel_id),
-    ident_dashboard_element VARCHAR(50) -- Número o identificador del elemento en el panel
+    ident_dashboard_element VARCHAR(50) -- N·mero o identificador del elemento en el panel
 );
 
--- 2.5 Mapa SCADA → Formato1 → Stage (Integrado desde referencial_master.sql)
+-- 2.5 Mapa SCADA \u2192 Formato1 \u2192 Stage (Integrado desde referencial_master.sql)
 CREATE TABLE referencial.tbl_var_scada_map (
     var_id_scada INT PRIMARY KEY,
     id_formato1 INT NOT NULL,
@@ -69,27 +76,27 @@ CREATE TABLE referencial.tbl_var_scada_map (
 );
 
 -- =============================================================================
--- 3. REGLAS DE NEGOCIO Y CONFIGURACIÓN DINÁMICA
+-- 3. REGLAS DE NEGOCIO Y CONFIGURACIËN DIN┴MICA
 -- =============================================================================
 
--- 3.1 Límites y Targets por Pozo (Configuración de Alarmas)
+-- 3.1 LÝmites y Targets por Pozo (Configuraci¾n de Alarmas)
 CREATE TABLE referencial.tbl_limites_pozo (
     limite_id SERIAL PRIMARY KEY,
-    pozo_id INT NOT NULL, -- Referencia lógica a reporting.dim_pozo (INT, no FK dura para evitar ciclos)
+    pozo_id INT NOT NULL, -- Referencia l¾gica a reporting.dim_pozo (INT, no FK dura para evitar ciclos)
     variable_id INT NOT NULL REFERENCES referencial.tbl_maestra_variables(variable_id),
     
     -- Metas y Referencias
     target_value DECIMAL(12,4),   -- Valor ideal (Target)
-    baseline_value DECIMAL(12,4), -- Valor base histórico
-    tolerancia_variacion_pct DECIMAL(5,2) DEFAULT 10.0, -- % permitido antes de alertar
+    baseline_value DECIMAL(12,4), -- Valor base hist¾rico
+    tolerancia_variacion_pct DECIMAL(5,2) DEFAULT 10.0, -- %% permitido antes de alertar
     
-    -- Umbrales para Semáforo (Rojo/Amarillo/Verde)
+    -- Umbrales para Semßforo (Rojo/Amarillo/Verde)
     min_critical DECIMAL(12,4),
     min_warning DECIMAL(12,4),
     max_warning DECIMAL(12,4),
     max_critical DECIMAL(12,4),
     
-    -- Configuración IA
+    -- Configuraci¾n IA
     ai_confidence_threshold DECIMAL(5,2) DEFAULT 95.0,
     
     fecha_vigencia_inicio DATE DEFAULT CURRENT_DATE,
@@ -109,7 +116,7 @@ CREATE TABLE referencial.tbl_dq_rules (
     origen_regla VARCHAR(100) DEFAULT 'Excel Matriz Calidad'
 );
 
--- 3.3 Reglas de Consistencia (Física)
+-- 3.3 Reglas de Consistencia (FÝsica)
 CREATE TABLE referencial.tbl_reglas_consistencia (
     codigo_rc VARCHAR(20) PRIMARY KEY,
     descripcion TEXT,
@@ -142,7 +149,7 @@ LEFT JOIN referencial.tbl_var_scada_map vsm
 LEFT JOIN referencial.tbl_ref_unidades u
        ON u.unidad_id = mv.unidad_id;
 
--- 4.2 VISTA PIVOTEADA DE LÍMITES (V4) - [MOVIDA DESDE V6 PARA DISPONIBILIDAD INMEDIATA]
+-- 4.2 VISTA PIVOTEADA DE L═MITES (V4) - [MOVIDA DESDE V6 PARA DISPONIBILIDAD INMEDIATA]
 CREATE OR REPLACE VIEW referencial.vw_limites_pozo_pivot_v4 AS
 WITH DistinctWells AS (
     SELECT well_id as pozo_id FROM stage.tbl_pozo_maestra
@@ -150,9 +157,8 @@ WITH DistinctWells AS (
     SELECT DISTINCT pozo_id FROM referencial.tbl_limites_pozo
 ),
 VariablesToPivot AS (
-    -- ID Formato 1: 54 (WHP), 55 (CASING), 127 (SPM), 48 (FILL), 121 (ROAD LOAD)
     SELECT variable_id, id_formato1 FROM referencial.tbl_maestra_variables 
-    WHERE id_formato1 IN (54, 55, 127, 48, 121)
+    WHERE id_formato1 IN (54, 55, 127, 48)
 )
 SELECT 
     dw.pozo_id,
@@ -166,15 +172,9 @@ SELECT
     -- SPM (ID: 127) - Target and Tolerance
     MAX(CASE WHEN v.id_formato1 = 127 THEN COALESCE(l_spec.target_value, l_def.target_value) END) as spm_target,
     MAX(CASE WHEN v.id_formato1 = 127 THEN COALESCE(l_spec.tolerancia_variacion_pct, l_def.tolerancia_variacion_pct) END) as spm_tol,
-    -- FILL (ID: 48) - Limits and Target
+    -- FILL (ID: 48) - Min Critical and Target
     MAX(CASE WHEN v.id_formato1 = 48 THEN COALESCE(l_spec.min_critical, l_def.min_critical) END) as fill_min_crit,
-    MAX(CASE WHEN v.id_formato1 = 48 THEN COALESCE(l_spec.min_warning, l_def.min_warning) END) as fill_min_warn,
-    MAX(CASE WHEN v.id_formato1 = 48 THEN COALESCE(l_spec.max_warning, l_def.max_warning) END) as fill_max_warn,
-    MAX(CASE WHEN v.id_formato1 = 48 THEN COALESCE(l_spec.max_critical, l_def.max_critical) END) as fill_max_crit,
-    MAX(CASE WHEN v.id_formato1 = 48 THEN COALESCE(l_spec.target_value, l_def.target_value) END) as fill_target_val,
-    -- ROAD LOAD (ID: 121) - [NEW]
-    MAX(CASE WHEN v.id_formato1 = 121 THEN COALESCE(l_spec.min_warning, l_def.min_warning) END) as rl_min_warn,
-    MAX(CASE WHEN v.id_formato1 = 121 THEN COALESCE(l_spec.max_warning, l_def.max_warning) END) as rl_max_warn
+    MAX(CASE WHEN v.id_formato1 = 48 THEN COALESCE(l_spec.target_value, l_def.target_value) END) as fill_target_val
 FROM DistinctWells dw
 CROSS JOIN VariablesToPivot v
 LEFT JOIN referencial.tbl_limites_pozo l_spec 
@@ -184,15 +184,15 @@ LEFT JOIN referencial.tbl_limites_pozo l_def
 GROUP BY dw.pozo_id;
 
 -- =============================================================================
--- 5. MOTOR LÓGICO BASE (FUNCIONES DE ESTANDARIZACIÓN)
--- Nota: Funciones complejas como fnc_evaluar_universal pueden residir aquí o en SPs
+-- 5. MOTOR LËGICO BASE (FUNCIONES DE ESTANDARIZACIËN)
+-- Nota: Funciones complejas como fnc_evaluar_universal pueden residir aquÝ o en SPs
 -- Se mantienen las funciones base de V3 por compatibilidad si se requieren
 -- =============================================================================
 
 /*
 --------------------------------------------------------------------------------
--- FUNCIÓN: fnc_evaluar_kpi
--- DESCRIPCIÓN: Recibe un valor y sus límites, devuelve el objeto de estado completo.
+-- FUNCIËN: fnc_evaluar_kpi
+-- DESCRIPCIËN: Recibe un valor y sus lÝmites, devuelve el objeto de estado completo.
 --------------------------------------------------------------------------------
 */
 CREATE OR REPLACE FUNCTION referencial.fnc_evaluar_kpi(
@@ -216,7 +216,7 @@ BEGIN
     IF p_valor IS NULL THEN
         v_estado_key := 'UNKNOWN';
     
-    -- 2. Evaluación de Rangos (Lógica de Negocio Centralizada)
+    -- 2. Evaluaci¾n de Rangos (L¾gica de Negocio Centralizada)
     ELSIF (p_max_crit IS NOT NULL AND p_valor >= p_max_crit) OR 
           (p_min_crit IS NOT NULL AND p_valor <= p_min_crit) THEN
         v_estado_key := 'CRITICAL';
@@ -239,8 +239,8 @@ $$;
 
 /*
 --------------------------------------------------------------------------------
--- FUNCIÓN: fnc_evaluar_variacion
--- DESCRIPCIÓN: Calcula % de variación y determina si es crítico según tolerancia.
+-- FUNCIËN: fnc_evaluar_variacion
+-- DESCRIPCIËN: Calcula %% de variaci¾n y determina si es crÝtico seg·n tolerancia.
 --------------------------------------------------------------------------------
 */
 CREATE OR REPLACE FUNCTION referencial.fnc_evaluar_variacion(
@@ -259,13 +259,13 @@ DECLARE
     v_var_pct DECIMAL;
     v_estado_key VARCHAR;
 BEGIN
-    -- Evitar división por cero
+    -- Evitar divisi¾n por cero
     IF p_valor_target IS NULL OR p_valor_target = 0 THEN
         RETURN QUERY SELECT 0.0::DECIMAL, '#B0B0B0'::VARCHAR, FALSE;
         RETURN;
     END IF;
 
-    -- Calcular variación
+    -- Calcular variaci¾n
     v_var_pct := ((p_valor_actual - p_valor_target) / p_valor_target) * 100.0;
 
     -- Evaluar contra tolerancia
@@ -284,7 +284,7 @@ END;
 $$;
 
 -- =============================================================================
--- 6. LÓGICA UNIVERSAL ZERO-CALC (Migrado de V6)
+-- 6. LËGICA UNIVERSAL ZERO-CALC (Migrado de V6)
 -- =============================================================================
 
 -- 6.1 Tipo de Respuesta Estandarizada
@@ -293,16 +293,16 @@ DO $$ BEGIN
         codigo_estado VARCHAR(20),      -- 'NORMAL', 'WARNING', 'CRITICAL'
         color_hex VARCHAR(7),           -- '#00C851', '#FFBB33', '#FF4444'
         nivel_severidad INT,            -- 0, 1, 3
-        variacion_pct DECIMAL(10,2),    -- +15.5%
-        es_parametro_critico BOOLEAN,   -- TRUE si falló un límite CRITICAL
-        mensaje_diagnostico TEXT,       -- 'Alta Presión > 500'
-        target_value DECIMAL(12,4)      -- El valor contra el que se comparó
+        variacion_pct DECIMAL(10,2),    -- +15.5%%
+        es_parametro_critico BOOLEAN,   -- TRUE si fall¾ un lÝmite CRITICAL
+        mensaje_diagnostico TEXT,       -- 'Alta Presi¾n > 500'
+        target_value DECIMAL(12,4)      -- El valor contra el que se compar¾
     );
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
 
--- 6.2 Función de Evaluación Universal (Zero-Calc Core)
+-- 6.2 Funci¾n de Evaluaci¾n Universal (Zero-Calc Core)
 CREATE OR REPLACE FUNCTION referencial.fnc_evaluar_universal(
     p_valor_actual DECIMAL,
     -- Rango Absoluto (KPI)
@@ -310,7 +310,7 @@ CREATE OR REPLACE FUNCTION referencial.fnc_evaluar_universal(
     p_min_warn DECIMAL DEFAULT NULL,
     p_max_warn DECIMAL DEFAULT NULL,
     p_max_crit DECIMAL DEFAULT NULL,
-    -- Variación Relativa (Target)
+    -- Variaci¾n Relativa (Target)
     p_target DECIMAL DEFAULT NULL,
     p_tolerancia_pct DECIMAL DEFAULT NULL
 )
@@ -335,31 +335,31 @@ BEGIN
         RETURN v_res;
     END IF;
 
-    -- A. EVALUACIÓN POR RANGOS ABSOLUTOS
+    -- A. EVALUACIËN POR RANGOS ABSOLUTOS
     IF p_max_crit IS NOT NULL AND p_valor_actual >= p_max_crit THEN
         v_estado_key := 'CRITICAL';
-        v_res.mensaje_diagnostico := 'Sobrepasa Máximo Crítico';
+        v_res.mensaje_diagnostico := 'Sobrepasa Mßximo CrÝtico';
     ELSIF p_min_crit IS NOT NULL AND p_valor_actual <= p_min_crit THEN
         v_estado_key := 'CRITICAL';
-        v_res.mensaje_diagnostico := 'Debajo Mínimo Crítico';
+        v_res.mensaje_diagnostico := 'Debajo MÝnimo CrÝtico';
     ELSIF p_max_warn IS NOT NULL AND p_valor_actual >= p_max_warn THEN
         v_estado_key := 'WARNING';
-        v_res.mensaje_diagnostico := 'Sobrepasa Máximo Advertencia';
+        v_res.mensaje_diagnostico := 'Sobrepasa Mßximo Advertencia';
     ELSIF p_min_warn IS NOT NULL AND p_valor_actual <= p_min_warn THEN
         v_estado_key := 'WARNING';
-         v_res.mensaje_diagnostico := 'Debajo Mínimo Advertencia';
+         v_res.mensaje_diagnostico := 'Debajo MÝnimo Advertencia';
     END IF;
 
-    -- B. EVALUACIÓN POR VARIACIÓN (Si no falló por rangos críticos)
+    -- B. EVALUACIËN POR VARIACIËN (Si no fall¾ por rangos crÝticos)
     IF v_estado_key != 'CRITICAL' AND p_target IS NOT NULL AND p_target <> 0 THEN
         v_res.variacion_pct := ((p_valor_actual - p_target) / p_target) * 100.0;
         
         IF ABS(v_res.variacion_pct) > COALESCE(p_tolerancia_pct, 10.0) THEN
-            -- Solo marcar como warning si es variación (discutible, puede ser crítico)
+            -- Solo marcar como warning si es variaci¾n (discutible, puede ser crÝtico)
             -- Asumimos WARNING para variaciones salvo config contraria
             IF v_estado_key = 'NORMAL' THEN 
                 v_estado_key := 'WARNING';
-                v_res.mensaje_diagnostico := 'Desviación de Target > ' || p_tolerancia_pct || '%';
+                v_res.mensaje_diagnostico := 'Desviaci¾n de Target > ' || p_tolerancia_pct || '%%';
             END IF;
         END IF;
     END IF;
@@ -381,3 +381,5 @@ BEGIN
     RETURN v_res;
 END;
 $$;
+]
+(Background on this error at: https://sqlalche.me/e/20/f405)

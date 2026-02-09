@@ -56,25 +56,27 @@ def execute_sql_file(file_path: str) -> None:
 # ------------------------------------------------------------
 def transformar_reservas(df_raw: pd.DataFrame) -> pd.DataFrame:
     mapeo_reservas = {
-        1: 'well_id',
-        10: 'gravedad_api',
-        18: 'viscosidad_crudo',
-        24: 'presion_burbujeo',
-        25: 'presion_estatica_yacimiento',
-        27: 'presion_fondo_fluyente_critico',
-        29: 'viscosidad_superficie',
-        30: 'factor_volumetrico',
-        31: 'otros_pvt',
-        32: 'wc_critico',
-        48: 'llenado_bomba_minimo',
-        58: 'contenido_finos',
-        63: 'gravedad_especifica_agua',
-        128: 'reserva_inicial_teorica',
-        152: 'q_esperado',
-        159: 'radio_equivalente',
-        160: 'longitud_horizontal',
-        161: 'factor_dano',
-        162: 'permeabilidad_vertical',
+            1: 'well_id',
+            10: 'gravedad_api',
+            18: 'viscosidad_crudo',
+            24: 'presion_burbujeo',
+            25: 'presion_estatica_yacimiento',
+            27: 'presion_fondo_fluyente_critico',
+            29: 'viscosidad_superficie',
+            30: 'factor_volumetrico',
+            31: 'otros_pvt',  # Agregado - Otros PVT
+            32: 'wc_critico',
+            48: 'llenado_bomba_minimo',
+            58: 'contenido_finos',
+            # 59: 'nivel_fluido_dinamico',  # REMOVIDO - No existe en schema V4
+            63: 'gravedad_especifica_agua',
+            128: 'reserva_inicial_teorica',  # Agregado
+            152: 'q_esperado',
+            159: 'radio_equivalente',
+            160: 'longitud_horizontal',
+            161: 'factor_dano',
+            162: 'permeabilidad_vertical',
+            128: 'reserva_inicial_teorica' #agregado
     }
 
     df_filtrado = df_raw[df_raw["ID"].isin(mapeo_reservas.keys())]

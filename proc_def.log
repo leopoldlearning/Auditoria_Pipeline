@@ -1,0 +1,237 @@
+
+BEGIN
+    -- A. UPSERT DE DATOS CRUDOS (Mapping Stage -> Reporting V4)
+    INSERT INTO reporting.dataset_current_values AS target (
+        well_id,
+        nombre_pozo,
+        cliente,
+        region,
+        campo,
+        ultima_actualizacion,
+        
+        -- Mapping V4 Renamed Columns & Standard Columns
+        well_head_pressure_psi_act,      -- Antes whp_psi
+        casing_head_pressure_psi_act,    -- Antes chp_psi
+        pump_intake_pressure_psi_act,    -- Antes pip_psi
+        pump_discharge_pressure_psi_act, -- Antes pdp_psi
+        
+        spm_actual,                      -- MANTENER (Legacy/Display)
+        pump_avg_spm_act,                -- Antes spm_actual / V4 Standard
+        
+        pump_fill_monitor_pct,
+        gas_fill_monitor_pct_act,
+        rod_weight_buoyant_lb_act,
+        
+        motor_power_hp_act,              -- Antes potencia_hp
+        motor_current_a_act,             -- Antes amp_motor
+        
+        -- Nuevos campos V4
+        motor_running_flag,
+        produccion_fluido_bpd_act,
+        produccion_petroleo_diaria_bpd_act,
+        produccion_agua_diaria_bpd_act,
+        
+        updated_at
+    )
+    SELECT DISTINCT ON (m.well_id)
+        m.well_id,
+        m.nombre_pozo,
+        m.cliente,
+        m.region,
+        m.campo,
+        p.timestamp_lectura,
+        
+        p.presion_cabezal,          -- well_head_pressure_psi_act
+        p.presion_casing,           -- casing_head_pressure_psi_act
+        p.PIP,                      -- pump_intake_pressure_psi_act
+        p.presion_descarga_bomba,   -- pump_discharge_pressure_psi_act
+        
+        p.spm_promedio,             -- spm_actual
+        p.spm_promedio,             -- pump_avg_spm_act (Mismo origen por ahora)
+        
+        p.pump_fill_monitor,        -- pump_fill_monitor_pct
+        p.monitor_llenado_gas,      -- gas_fill_monitor_pct_act
+        p.rod_weight_buoyant,       -- rod_weight_buoyant_lb_act
+        
+        p.potencia_actual_motor,    -- motor_power_hp_act
+        p.current_amperage,         -- motor_current_a_act
+        
+        p.estado_motor,             -- motor_running_flag
+        p.produccion_fluido_diaria, -- produccion_fluido_bpd_act
+        p.produccion_petroleo_diaria, -- prod_petroleo_diaria_bpd_act
+        p.produccion_agua_diaria,   -- produccion_agua_diaria_bpd_act
+        
+        NOW()
+    FROM stage.tbl_pozo_maestra m
+    LEFT JOIN stage.tbl_pozo_produccion p
+        ON m.well_id = p.well_id
+    ORDER BY m.well_id, p.timestamp_lectura DESC
+    ON CONFLICT (well_id) DO UPDATE SET 
+        nombre_pozo                = EXCLUDED.nombre_pozo,
+        cliente                    = EXCLUDED.cliente,
+        region                     = EXCLUDED.region,
+        campo                      = EXCLUDED.campo,
+        
+        well_head_pressure_psi_act      = EXCLUDED.well_head_pressure_psi_act,
+        casing_head_pressure_psi_act    = EXCLUDED.casing_head_pressure_psi_act,
+        pump_intake_pressure_psi_act    = EXCLUDED.pump_intake_pressure_psi_act,
+        pump_discharge_pressure_psi_act = EXCLUDED.pump_discharge_pressure_psi_act,
+        
+        spm_actual                 = EXCLUDED.spm_actual,
+        pump_avg_spm_act           = EXCLUDED.pump_avg_spm_act, 
+        
+        pump_fill_monitor_pct      = EXCLUDED.pump_fill_monitor_pct,
+        gas_fill_monitor_pct_act   = EXCLUDED.gas_fill_monitor_pct_act,
+        rod_weight_buoyant_lb_act  = EXCLUDED.rod_weight_buoyant_lb_act,
+        
+        motor_power_hp_act         = EXCLUDED.motor_power_hp_act,
+        motor_current_a_act        = EXCLUDED.motor_current_a_act,
+        
+        motor_running_flag         = EXCLUDED.motor_running_flag,
+        produccion_fluido_bpd_act       = EXCLUDED.produccion_fluido_bpd_act,
+        produccion_petroleo_diaria_bpd_act    = EXCLUDED.produccion_petroleo_diaria_bpd_act,
+        produccion_agua_diaria_bpd_act  = EXCLUDED.produccion_agua_diaria_bpd_act,
+        
+        ultima_actualizacion       = EXCLUDED.ultima_actualizacion,
+        updated_at                 = NOW();
+
+    -- B. C┴LCULO MASIVO EN MEMORIA (Evaluaci¾n Universal con Nombres V4)
+    WITH calc AS (
+        SELECT 
+            curr.well_id,
+            dp.road_load_status_eff_low  AS rl_min_legacy, -- Fallback si no estß en view
+            dp.road_load_status_eff_high AS rl_max_legacy,
+            
+            -- WHP
+            res_whp.color_hex       AS whp_color,
+            res_whp.nivel_severidad AS whp_sev,
+            
+            -- SPM
+            res_spm.color_hex       AS spm_color,
+            res_spm.variacion_pct   AS spm_var,
+            res_spm.target_value    AS spm_target_calc,
+            
+            -- FILL
+            res_fill.color_hex      AS fill_color,
+            res_fill.target_value   AS fill_target_calc,
+            res_fill.variacion_pct  AS fill_var,
+            
+            -- MTBF
+            res_mtbf.color_hex      AS mtbf_color,
+            res_mtbf.variacion_pct  AS mtbf_var,
+            
+            -- ROAD LOAD (Calculado aquÝ por ahora, ya que depende de % carga varilla que no estß directo en curr)
+            -- Asumiremos que rod_weight_buoyant_lb_act ES el valor a comparar, o necesitamos convertir a PCT.
+            -- En V5: `road_load_pct_act` (columna) se comparaba.
+            -- En V4: `rod_weight_buoyant_lb_act` es LB. ┐D¾nde estß `road_load_pct_act`?
+            -- Si falta en V4 Dataset, usamos l¾gica simple o asumimos existe. 
+            -- Verificando V4 Schema: `road_load_pct_act` EXISTE en V3, ┐renombrada en V4? 
+            -- Mantenemos `road_load_pct_act` si existe, o calculamos.
+            -- Asumiremos `road_load_pct_act` en dataset.
+            
+            -- Targets estßticos
+            lim.spm_target          AS spm_target_lim,
+            lim.fill_target_val     AS fill_target_lim,
+            lim.rl_min_warn         AS rl_min_lim,
+            lim.rl_max_warn         AS rl_max_lim
+
+        FROM reporting.dataset_current_values curr
+        LEFT JOIN reporting.dim_pozo dp ON curr.well_id = dp.pozo_id -- Para legacy targets si view falla
+        LEFT JOIN referencial.vw_limites_pozo_pivot_v4 lim
+            ON curr.well_id = lim.pozo_id
+        
+        -- WHP (well_head_pressure_psi_act)
+        CROSS JOIN LATERAL referencial.fnc_evaluar_universal(
+            curr.well_head_pressure_psi_act, 
+            lim.whp_min_crit,
+            lim.whp_min_warn,
+            lim.whp_max_warn,
+            lim.whp_max_crit, 
+            NULL::DECIMAL,
+            NULL::DECIMAL
+        ) AS res_whp
+        
+        -- SPM (pump_avg_spm_act)
+        CROSS JOIN LATERAL referencial.fnc_evaluar_universal(
+            curr.pump_avg_spm_act, 
+            NULL::DECIMAL,
+            NULL::DECIMAL,
+            NULL::DECIMAL,
+            NULL::DECIMAL, 
+            lim.spm_target,
+            lim.spm_tol
+        ) AS res_spm
+        
+        -- FILL (pump_fill_monitor_pct)
+        CROSS JOIN LATERAL referencial.fnc_evaluar_universal(
+            curr.pump_fill_monitor_pct, 
+            lim.fill_min_crit,
+            lim.fill_min_warn,
+            lim.fill_max_warn,
+            lim.fill_max_crit, 
+            NULL::DECIMAL,
+            NULL::DECIMAL
+        ) AS res_fill
+
+    
+        -- MTBF (kpi_mtbf_hrs_act)
+        CROSS JOIN LATERAL referencial.fnc_evaluar_universal(
+            curr.kpi_mtbf_hrs_act, 
+            NULL::DECIMAL,
+            NULL::DECIMAL,
+            NULL::DECIMAL,
+            NULL::DECIMAL, 
+            dp.mtbf_target, -- From Dim Pozo
+            10.0 -- Tolerance default (hardcoded or from rules?)
+        ) AS res_mtbf
+
+    )
+    
+    -- C. UPDATE ┌NICO SOBRE DATASET_CURRENT_VALUES (Nombres V4)
+    UPDATE reporting.dataset_current_values tgt
+    SET 
+        -- WHP
+        whp_status_color = c.whp_color,
+        dq_status = CASE
+            WHEN c.whp_sev >= 3 THEN 'FAIL'
+            ELSE 'PASS'
+        END,
+        
+        -- SPM
+        pump_spm_status_color = c.spm_color,
+        spm_target            = c.spm_target_calc,
+        pump_avg_spm_act      = tgt.pump_avg_spm_act,
+        pump_spm_var_pct      = c.spm_var,  -- [UPDATED] Populating Variance
+        
+        -- FILL
+        pump_fill_monitor_status_color = c.fill_color,
+        pump_fill_monitor_target       = c.fill_target_lim,
+        pump_fill_monitor_var          = c.fill_var, -- [UPDATED] Populating Variance
+        
+        -- MTBF
+        mtbf_status_color     = c.mtbf_color,
+        mtbf_variance_pct     = c.mtbf_var, -- [UPDATED] Populating Variance
+        
+        -- ROAD LOAD (Restaurado V5 Logic)
+        road_load_status_color = CASE
+             WHEN tgt.road_load_pct_act IS NULL THEN '#B0B0B0'
+             WHEN (tgt.road_load_pct_act < COALESCE(c.rl_min_lim, 0) OR tgt.road_load_pct_act > COALESCE(c.rl_max_lim, 100)) 
+                 THEN '#FF4444' -- CRITICAL
+             WHEN (tgt.road_load_pct_act >= (COALESCE(c.rl_max_lim, 100) - 5) AND tgt.road_load_pct_act <= COALESCE(c.rl_max_lim, 100)) 
+                 THEN '#FFBB33' -- WARNING
+             ELSE '#00C851' -- NORMAL
+        END,
+        road_load_status_legend_text = CONCAT(COALESCE(c.rl_min_lim,0), '% <= Target <= ', COALESCE(c.rl_max_lim,100), '%'),
+        
+        -- Estado de comunicaci¾n
+        color_estado_comunicacion = CASE 
+            WHEN EXTRACT(EPOCH FROM (NOW() - tgt.ultima_actualizacion))/60 > 60
+                THEN '#B0B0B0' -- OFFLINE
+            ELSE '#00C851'    -- NORMAL
+        END
+    FROM calc c
+    WHERE tgt.well_id = c.well_id;
+
+    RAISE NOTICE 'Snapshot V4 actualizado (Zero-Calc + Universal Eval + Variaciones + Road Load).';
+END;
+

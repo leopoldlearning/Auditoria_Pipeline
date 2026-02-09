@@ -18,8 +18,8 @@ if not DB_URL:
 # LISTA CORREGIDA CON TUS NOMBRES DE ARCHIVO EXACTOS
 SCHEMA_FILES = [
     # 1. Estructura (DDL)
-    "V4__referencial_schema_redesign.sql",
     "V4__stage_schema_redesign.sql",
+    "V4__referencial_schema_redesign.sql",
       
     "V1__universal_schema.sql",
     "V4__reporting_schema_redesign.sql",
@@ -32,8 +32,8 @@ SCHEMA_FILES = [
     
     "V6__stored_procedures_v4_compatible.sql",
 
-    # 3. Datos Semilla (Referencial)
-    "V4__referencial_seed_data.sql",
+    # 3. Datos Semilla (Referencial) -> Managed by load_referencial.py
+    # "V4__referencial_seed_data.sql",
  
 ]
 
@@ -43,6 +43,15 @@ def init_db():
     base_path = Path(__file__).parent / "src" / "sql" / "schema"
     
     logger.info(">>> INICIANDO CREACIÓN DE ESQUEMAS <<<")
+    
+    # FORZAR RESET LIMPIO (Atomic)
+    with engine.connect() as conn:
+        logger.info("Forzando eliminación de esquemas antiguos...")
+        conn.execute(text("DROP SCHEMA IF EXISTS referencial CASCADE;"))
+        conn.execute(text("DROP SCHEMA IF EXISTS stage CASCADE;"))
+        conn.execute(text("DROP SCHEMA IF EXISTS reporting CASCADE;"))
+        conn.execute(text("DROP SCHEMA IF EXISTS universal CASCADE;"))
+        conn.commit()
     
     with engine.begin() as conn:
         for filename in SCHEMA_FILES:
