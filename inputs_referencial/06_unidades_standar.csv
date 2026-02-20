@@ -1,0 +1,39 @@
+nombre_estandarizado_unidad;abreviatura_unidad
+metro;m
+pie;ft
+pulgada;in
+pascal;Pa
+libra por pulgada cuadrada;psi
+kelvin;K
+grado Fahrenheit;°F
+barril por día;bpd
+barril;bbl
+pie cúbico estándar por día;scf/d
+pie cúbico estándar;scf
+millar de pies cúbicos;mcf
+barril por día líquido;BLPD
+segundo;s
+hora;h
+día;d
+hercio;Hz
+revoluciones por minuto;rpm
+emboladas por minuto;spm
+emboladas por día;strokes/d
+libra-fuerza;lbf
+watt;W
+kilowatt-hora;kWh
+caballo de fuerza(potencia);hp
+pascal segundo;Pa·s
+centipoise;cP
+metro cuadrado;m²
+milidarcy;mD
+miligramo por litro;mg/L
+amperio;A
+voltio;V
+porcentaje;%
+fracción;1
+adimensional;-
+número;num
+grado angular;°
+API gravity;°API
+kilowatt-hora por barril;kWh/bbl

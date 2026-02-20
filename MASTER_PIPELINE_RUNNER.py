@@ -1,35 +1,25 @@
 #!/usr/bin/env python3
-
-#INGESTA REAL
-#    ↓
-#V5 UNIVERSAL ENGINE
-#    - Funciones universales
-#    - Vista pivoteada
-#    - Motor DQ
-#    - Motor Color Logic
-#    ↓
-#V2 REPORTING ENGINE
-#    - Horario
-#    - Diario
-#    - Mensual
-#    ↓
-#KPIs DE NEGOCIO
-#    ↓
-#V3 SNAPSHOT ENGINE
-#    ↓
-#COLOR LOGIC (SP)
-#    ↓
-#DATASETS FINALES
-
 """
 MASTER PIPELINE RUNNER - BP010 Data Pipelines
 =============================================
-Orquestador Maestro: DDL -> Ingesta Real -> Lógica V5 -> DQ -> Reporting -> Snapshot -> Semáforos.
+Orquestador Maestro (v2 - Optimizado):
+  1. INIT      → DDL + SPs (full reset)
+  2. LOAD      → Referencial + Ingesta + Seeds
+  3. DQ        → Validación calidad de datos
+  4. TRANSFORM → Facts (hora/día/mes) + Snapshot
+  5. ENRICH    → Targets + Evaluación + Derivados + KPIs
+  6. DEFAULTS  → Baselines desde tbl_config_kpi
+
+Flujo: init_schemas → load_referencial → ingest → seeds → DQ
+       → sp_load_to_reporting → current_values → sync_targets
+       → evaluación_universal → derivados_completos
+       → poblar_kpi_business → sp_populate_defaults
 """
 
 import os
 import subprocess
 import sys
+from datetime import date, timedelta
 from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
 
@@ -62,6 +52,11 @@ DB_NAME = os.getenv('DB_NAME', 'etl_data')
 
 DB_URL = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
+# Ventana de fechas parametrizable (env: LOOKBACK_DAYS, FECHA_INICIO, FECHA_FIN)
+LOOKBACK_DAYS = int(os.getenv('LOOKBACK_DAYS', '3650'))  # Default: ~10 años
+FECHA_FIN = os.getenv('FECHA_FIN', str(date.today() + timedelta(days=365*5)))
+FECHA_INICIO = os.getenv('FECHA_INICIO', str(date.today() - timedelta(days=LOOKBACK_DAYS)))
+
 # -----------------------------------------------------------------------------
 # FUNCIONES AUXILIARES
 # -----------------------------------------------------------------------------
@@ -71,16 +66,26 @@ def execute_sql_file(filename, description):
     print(f"\n>>> Executing SQL File: {filename} ({description})...")
     engine = create_engine(DB_URL)
 
-    # Buscar archivo en src/sql/schema o fallback a raíz
-    base_path = os.path.join("src", "sql", "schema")
-    file_path = os.path.join(base_path, filename)
-
-    if not os.path.exists(file_path):
-        file_path = filename  # fallback
-
-    if not os.path.exists(file_path):
-        print(f"[ERROR] Archivo no encontrado: {file_path}")
-        sys.exit(1)
+    # Buscar archivo en src/sql/schema, src/sql/process, o raíz
+    search_paths = [
+        os.path.join("src", "sql", "schema"),
+        os.path.join("src", "sql", "process"),
+    ]
+    
+    file_path = None
+    for base_path in search_paths:
+        candidate = os.path.join(base_path, filename)
+        if os.path.exists(candidate):
+            file_path = candidate
+            break
+    
+    if file_path is None:
+        # Fallback: buscar en raíz
+        if os.path.exists(filename):
+            file_path = filename
+        else:
+            print(f"[ERROR] Archivo no encontrado: {filename}")
+            sys.exit(1)
 
     try:
         with open(file_path, "r", encoding="utf-8") as f:
@@ -112,83 +117,115 @@ def execute_sql_query(query):
 
 def run_pipeline():
     print("="*60)
-    print("STARTING MASTER PIPELINE ORCHESTRATION")
-    print(f"Python Executable: {PYTHON_EXE}")
+    print("MASTER PIPELINE ORCHESTRATION (v2)")
+    print(f"Python: {PYTHON_EXE}")
+    print(f"Fechas: {FECHA_INICIO} → {FECHA_FIN}")
+    print(f"DB: {DB_HOST}:{DB_PORT}/{DB_NAME}")
     print("="*60)
 
-    # PASO 1: REINICIO DE ESQUEMAS
-    print("\n>>> 1. Re-initializing Schemas (Full Reset)...")
+    # =========================================================================
+    # FASE 1: INIT (DDL + SPs) — Full Reset
+    # =========================================================================
+    # Carga 12 SQL files: V4 schemas, V1 universal, V6.* SPs, V7 KPI+clasificación,
+    # V8 evaluación, V9 funciones. Todo con CREATE OR REPLACE / DROP+CREATE.
+    print("\n>>> 1. Initializing Schemas (Full Reset)...")
     subprocess.run([PYTHON_EXE, "init_schemas.py"], check=True)
     print("[OK] Init Schemas completed.")
 
-    # PASO 1.5: REFERENCIAL MASTER 
-    print("\n>>> 1.5 Loading Referencial Master (Variables, Rangos, Mapas SCADA)...")
-    subprocess.run([PYTHON_EXE, "load_referencial.py"], check=True) 
-    print("[OK] Referencial Master Loaded.")
-    
-    # PASO 2: INGESTA REAL
-    print("\n>>> 2. Ingesting Real Telemetry (SQL Dumps)...")
+    # =========================================================================
+    # FASE 2: LOAD (Referencial + Ingesta + Seeds)
+    # =========================================================================
+    print("\n>>> 2.1 Loading Referencial Master...")
+    subprocess.run([PYTHON_EXE, "load_referencial.py"], check=True)
+    print("[OK] Referencial loaded.")
+
+    print("\n>>> 2.2 Ingesting Telemetry (SQL Dumps + Excel)...")
     subprocess.run([PYTHON_EXE, "ingest_real_telemetry.py"], check=True)
     print("[OK] Ingestion completed.")
 
-    # PASO 3: LÓGICA UNIVERSAL (V5)
-    print("\n>>> 3. Loading Universal Logic Engine (V5)...")
-    # execute_sql_file("V5__stored_procedures.sql", "Updating Logic V5") -- OBSOLETO, reemplazado por V6 en init_schemas
-    print("[SKIP] V5 Logic skipped (Covered by V6 in init_schemas).")
+    print("\n>>> 2.3 Seeding Missing Referencial Data...")
+    execute_sql_query("CALL referencial.sp_seed_defaults();")
+    print("[OK] Seeds populated.")
 
-    # PASO 3.1: MOTOR DQ
-    print("\n>>> 3.1 Running Data Quality Engine (V5 DQ)...")
-    execute_sql_query("""
+    # =========================================================================
+    # FASE 3: DATA QUALITY
+    # =========================================================================
+    print("\n>>> 3. Running Data Quality Validation...")
+    execute_sql_query(f"""
         CALL stage.sp_execute_dq_validation(
-            '2020-01-01'::DATE,
-            '2030-12-31'::DATE,
+            '{FECHA_INICIO}'::DATE,
+            '{FECHA_FIN}'::DATE,
             NULL::INT
         );
     """)
-    print("[OK] Data Quality Validation completed.")
+    print("[OK] DQ Validation completed.")
 
-    # PASO 3.5: REPORTING ENGINE V2
-    print("\n>>> 3.5 Loading Reporting Engine V2...")
-    # execute_sql_file("V2_reporting_engine.sql", "Loading Reporting Engine V2") -- OBSOLETO, reemplazado por V6.1 en init_schemas
-    print("[SKIP] Reporting Engine V2 skipped (Covered by V6.1 in init_schemas).")
-
-    # PASO 5: CARGA HISTÓRICA (FACTS)
-    print("\n>>> 5. Running Reporting Load (Daily, Hourly, Monthly)...")
-    execute_sql_query("""
+    # =========================================================================
+    # FASE 4: TRANSFORM (Stage → Reporting Facts + Snapshot)
+    # =========================================================================
+    print("\n>>> 4.1 Loading Reporting Facts (Hourly, Daily, Monthly)...")
+    execute_sql_query(f"""
         CALL reporting.sp_load_to_reporting(
-            '2020-01-01'::DATE,
-            '2030-12-31'::DATE,
+            '{FECHA_INICIO}'::DATE,
+            '{FECHA_FIN}'::DATE,
             TRUE, TRUE, TRUE
         );
     """)
-    print("[OK] History loaded.")
+    print("[OK] Facts loaded.")
 
-    # PASO 5.5: KPIs DE NEGOCIO
-    print("\n>>> 5.5 Loading Business KPIs...")
-    execute_sql_query("""
-        CALL reporting.sp_load_kpi_business(
-            '2020-01-01'::DATE,
-            '2030-12-31'::DATE
+    print("\n>>> 4.2 Updating Snapshot (dataset_current_values)...")
+    execute_sql_query("CALL reporting.actualizar_current_values_v4();")
+    print("[OK] Snapshot updated.")
+
+    # =========================================================================
+    # FASE 5: ENRICH (Targets + Evaluación + Derivados + KPIs)
+    # =========================================================================
+    print("\n>>> 5.1 Syncing Dim Pozo Targets...")
+    execute_sql_query("CALL reporting.sp_sync_dim_pozo_targets();")
+    print("[OK] Targets synced.")
+
+    print("\n>>> 5.2 Applying Universal Evaluation (Semáforos V8)...")
+    execute_sql_query("CALL reporting.aplicar_evaluacion_universal();")
+    print("[OK] Evaluation applied.")
+
+    # sp_calcular_derivados_completos ejecuta: derivados_current_values,
+    # derivados_horarios, kpis_horarios, promedios_diarios,
+    # completar_fact_diarias, reagregar_mensuales, kpis_business
+    print("\n>>> 5.3 Running Derived Calculations (V9)...")
+    execute_sql_query(f"""
+        CALL reporting.sp_calcular_derivados_completos(
+            '{FECHA_INICIO}'::DATE,
+            '{FECHA_FIN}'::DATE
         );
     """)
-    print("[OK] Business KPIs loaded.")
+    print("[OK] Derived calculations completed.")
 
-    # PASO 6: SNAPSHOT ENGINE V3
-    print("\n>>> 6. Updating Snapshot (dataset_current_values)...")
-    execute_sql_query("CALL reporting.actualizar_current_values_v4();") # Updated to V4
-    print("[OK] Snapshot updated (V4).")
+    print("\n>>> 5.4 Populating KPI Business (V7 WIDE)...")
+    execute_sql_query(f"""
+        CALL reporting.poblar_kpi_business(
+            '{FECHA_INICIO}'::DATE,
+            '{FECHA_FIN}'::DATE
+        );
+    """)
+    print("[OK] KPI Business populated.")
 
-    # PASO 6.5: LÓGICA DE COLORES Y TARGETS
-    print("\n>>> 6.5 Applying Color & Target Logic...")
-    # execute_sql_query("CALL reporting.sp_apply_color_logic();") -- OBSOLETO, integrado en actualizar_current_values_v4
-    print("[SKIP] Color Logic (Integrated in V4).")
-    
-    # 6.6 Sincronización Dim Pozo (Recuperado de V5)
-    print("\n>>> 6.6 Syncing Dim Pozo Targets...")
-    execute_sql_query("CALL reporting.sp_sync_dim_pozo_targets();")
-    print("[OK] Dim Pozo Targets Synced.")
+    # =========================================================================
+    # FASE 6: DEFAULTS (Baselines desde tbl_config_kpi)
+    # =========================================================================
+    print("\n>>> 6. Populating Baselines & Defaults...")
+    execute_sql_query("CALL reporting.sp_populate_defaults();")
+    print("[OK] Defaults populated.")
 
-    print("\n>>> PIPELINE COMPLETED SUCCESSFULLY <<<")
+    # =========================================================================
+    # FASE 7: CONSISTENCY VALIDATION (RC-001..RC-006)
+    # =========================================================================
+    print("\n>>> 7. Running Consistency Rules Validation...")
+    execute_sql_query("CALL stage.sp_execute_consistency_validation();")
+    print("[OK] Consistency validation completed.")
+
+    print("\n" + "="*60)
+    print(">>> PIPELINE COMPLETED SUCCESSFULLY <<<")
+    print("="*60)
 
 
 if __name__ == "__main__":

@@ -71,7 +71,7 @@ WITH PivotedData AS (
         MAX(CASE WHEN l.var_id = 728 THEN CAST(l.measure AS FLOAT) END) AS s_road_stroke,
 
         -- ID: 42 | IDN: 714 | unit rtd stroke -- Longitud de carrera nominal de la unidad de bomneo(Diseño)
-        MAX(CASE WHEN l.var_id = 714 THEN CAST(l.measure AS FLOAT) END) AS longitud_carrera_nominal_unidad,
+        MAX(CASE WHEN l.var_id = 714 THEN CAST(l.measure AS FLOAT) END) AS longitud_carrera_nominal_unidad_in,
 
         -- ====================================================================
         -- PRESIONES Y TEMPERATURAS
@@ -129,7 +129,10 @@ WITH PivotedData AS (
         -- ID: 113 | IDN: 883 | Daily Leakage
         MAX(CASE WHEN l.var_id = 883 THEN CAST(l.measure AS FLOAT) END) AS fuga_diaria,
         
-        -- ID: 65 | IDN: ??? | Fluid Flow Monitor BPD
+        -- ID: 65 (formato1) | IDN: SIN MAPEO SCADA | Fluid Flow Monitor BPD
+        -- NOTA: var_id=65 es id_formato1, NO el IDN SCADA. Landing usa IDNs.
+        -- Este pozo no tiene sensor de fluid flow asignado en SCADA.
+        -- Cuando se conozca el IDN real, reemplazar 65 por el IDN correcto.
         MAX(CASE WHEN l.var_id = 65 THEN CAST(l.measure AS FLOAT) END) AS fluid_flow_monitor_bpd,
         
         -- ID: 119 | IDN: 866 | Liquid Fill Monitor
@@ -324,7 +327,7 @@ INSERT INTO stage.tbl_pozo_produccion (
     rpm_motor,
     tiempo_actual_drive,
     estado_motor,
-    longitud_carrera_nominal_unidad,
+    longitud_carrera_nominal_unidad_in,
     
     -- Presiones y Temperaturas
     presion_cabezal,
@@ -421,7 +424,7 @@ SELECT
     rpm_motor,
     tiempo_actual_drive,
     estado_motor,
-    longitud_carrera_nominal_unidad, ---CAmbio de nombre
+    longitud_carrera_nominal_unidad_in, ---CAmbio de nombre
     
     -- Presiones y Temperaturas
     presion_cabezal,

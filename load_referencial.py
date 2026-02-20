@@ -23,7 +23,8 @@ CSV_ID_TRUTH = "data/Variables_ID_stage.csv"
 CSV_REGLAS = "inputs_referencial/02_reglas_calidad.csv"
 CSV_VALIDACION = "data/hoja_validacion.csv"
 CSV_UNIDADES = "inputs_referencial/05_unidades.csv"
-PATH_V1_STAGE = "src/sql/process/V1__stage_to_stage.sql"
+CSV_UNIDADES_STD = "inputs_referencial/06_unidades_standar.csv"
+PATH_V1_STAGE = "src/sql/process/_archive/V1__stage_to_stage.sql"
 PATH_RANGOS = "inputs_referencial/Rangos_validacion_variables_petroleras_limpio.py"
 
 def load_maestra_and_metadata():
@@ -35,21 +36,75 @@ def load_maestra_and_metadata():
     df_strict['ID_clean'] = df_strict['ID_raw'].astype(int)
     df_strict = df_strict.drop_duplicates(subset=['ID_clean'], keep='first')
     
+    # ── Mapa de normalización: unidad cruda del CSV-05 → abreviatura estándar del CSV-06 ──
+    # Construido manualmente cruzando las 44 variantes del 05 con las 39 del 06
+    UNIT_NORMALIZE = {
+        # Presiones
+        'PSI': 'psi', 'Psi': 'psi', 'psi': 'psi',
+        # Longitudes
+        'Pies': 'ft', 'Pie': 'ft', 'ft': 'ft', 'In': 'in', 'in': 'in', 'inches': 'in',
+        # Temperaturas
+        'F': '°F',
+        # Producción volumétrica
+        'bpd': 'bpd', 'Barriles/día o BPD': 'bpd', 'Barriles/dÃ\xada o BPD': 'bpd', 'bbl': 'bbl', 'bl': 'bbl', 'BLPD': 'BLPD',
+        'scf/D': 'scf/d', 'scf': 'scf', 'mcf': 'mcf',
+        # Velocidad/frecuencia rotacional
+        'SPM': 'spm', 'RPM': 'rpm', 'Hz': 'Hz',
+        # Fuerzas y cargas
+        'Lb': 'lbf',
+        # Potencia y energía
+        'HP': 'hp', 'Hp': 'hp',
+        'kwh': 'kWh', 'kwh/bl': 'kWh/bbl', 'kwh/bbl': 'kWh/bbl',
+        # Viscosidad y permeabilidad
+        'Centipoises': 'cP', 'cP': 'cP',
+        'mili Darcy': 'mD',
+        # Eléctricos
+        'A': 'A', 'AMP': 'A', 'VAC': 'V',
+        # Proporcionales
+        '%': '%', 'Fracion (0-1)': '1',
+        'Adimensional': '-', '°API o Adimensional': '°API',
+        'Â°API o Adimensional': '°API',  # encoding latin-1 variant
+        # Concentración
+        'mg/L': 'mg/L',
+        # Contadores
+        'num': 'num', 'strokes': 'num', 'Strokes/D': 'strokes/d',
+        # Volumen unitario
+        'By/BN': '1',  # Factor volumétrico es adimensional
+        # Tiempo
+        'hh.mm': 'h',
+        # Coordenadas
+        'Grados, min, seg': '°', 'Grados?': '°',
+    }
+
+    # ── Cargar catálogo estándar de unidades desde 06_unidades_standar.csv ──
+    df_std_units = pd.read_csv(CSV_UNIDADES_STD, sep=';', encoding='utf-8')
+    std_units = {}  # abreviatura → nombre
+    for _, row in df_std_units.iterrows():
+        nombre = str(row.iloc[0]).strip()
+        abrev = str(row.iloc[1]).strip()
+        if nombre and abrev and nombre != 'nan':
+            std_units[abrev] = nombre
+
     try:
         df_units_cat = pd.read_csv(CSV_UNIDADES, sep=';', encoding='latin-1')
     except:
         df_units_cat = pd.read_csv(CSV_UNIDADES, sep=';', encoding='utf-8', errors='replace')
         
-    units_map = {}
+    units_map = {}  # id_formato1 → abreviatura estándar
     id_col = next((c for c in df_units_cat.columns if 'ID_formato1vfinal' in c), None)
     unit_col = next((c for c in df_units_cat.columns if 'Stage: Unidad' in c), None)
     
     if id_col and unit_col:
         for _, row in df_units_cat.iterrows():
             id_val = str(row[id_col]).strip().split('.')[0]
-            unit = str(row[unit_col]).strip()
-            if id_val.isdigit() and unit not in ['nan', '', 'N/A', 'lista']:
-                units_map[int(id_val)] = unit
+            unit_raw = str(row[unit_col]).strip()
+            if id_val.isdigit() and unit_raw not in ['nan', '', 'N/A', 'lista', 'Segun formato VSD', 'Formato Drive']:
+                std_symbol = UNIT_NORMALIZE.get(unit_raw)
+                if std_symbol:
+                    units_map[int(id_val)] = std_symbol
+                else:
+                    logger.warning(f"⚠️ Unidad no normalizada: '{unit_raw}' (id_formato1={id_val})")
+                    units_map[int(id_val)] = unit_raw  # fallback
 
     df_val = pd.read_csv(CSV_VALIDACION, sep=';', encoding='utf-8')
     col_panel = next(c for c in df_val.columns if 'Panel(es) de Uso' in c)
@@ -97,8 +152,19 @@ def load_maestra_and_metadata():
             conn.execute(text("INSERT INTO referencial.tbl_ref_paneles_bi (nombre_panel) VALUES (:p)"), {"p": p})
 
         conn.execute(text("TRUNCATE TABLE referencial.tbl_ref_unidades RESTART IDENTITY CASCADE;"))
-        for u in sorted(set(units_map.values())): 
-            conn.execute(text("INSERT INTO referencial.tbl_ref_unidades (simbolo, descripcion) VALUES (:u, :u) ON CONFLICT DO NOTHING"), {"u": u})
+        # Insertar unidades estándar desde 06_unidades_standar.csv
+        for abrev, nombre in sorted(std_units.items()):
+            conn.execute(text(
+                "INSERT INTO referencial.tbl_ref_unidades (simbolo, nombre, descripcion) "
+                "VALUES (:s, :n, :n) ON CONFLICT DO NOTHING"
+            ), {"s": abrev, "n": nombre})
+        # Agregar unidades usadas en units_map que no están en el estándar (fallback)
+        for std_sym in sorted(set(units_map.values())):
+            if std_sym not in std_units:
+                conn.execute(text(
+                    "INSERT INTO referencial.tbl_ref_unidades (simbolo, nombre, descripcion) "
+                    "VALUES (:s, :s, 'No estandarizada') ON CONFLICT DO NOTHING"
+                ), {"s": std_sym})
 
         conn.execute(text("TRUNCATE TABLE referencial.tbl_maestra_variables RESTART IDENTITY CASCADE;"))
         for _, row in df_strict.iterrows():
@@ -117,36 +183,116 @@ def load_maestra_and_metadata():
 def load_rules():
     print(">>> Carga de Reglas DQ y RC...")
     SI_MAP = {'Damage Factor': 161, 'Equivalent Radius': 159}
+    # id_formato1 excluidos del mapeo de consistencia (sin RC válido en CSV)
+    EXCLUDE_CONSISTENCIA = {155}
     with engine.begin() as conn:
         conn.execute(text("TRUNCATE TABLE referencial.tbl_dq_rules RESTART IDENTITY CASCADE;"))
         df_reglas = pd.read_csv(CSV_REGLAS, sep=';', encoding='utf-8').iloc[:35]
+
+        # ── Paso 1: Insertar DQ rules con parsing correcto de Representatividad y Latencia ──
         for _, row in df_reglas.iterrows():
             id_f1_raw = str(row['ID_FORMATO_1']).strip().replace('*', '')
             original_name = str(row['Nombre columna  de variable original']).strip()
             lookup_id = id_f1_raw if id_f1_raw.isdigit() else SI_MAP.get(original_name)
-            if lookup_id:
-                v_id = conn.execute(text("SELECT variable_id FROM referencial.tbl_maestra_variables WHERE id_formato1 = :id"), {"id": int(lookup_id)}).scalar()
-                if v_id: conn.execute(text("INSERT INTO referencial.tbl_dq_rules (variable_id, valor_min, severidad, origen_regla) VALUES (:v, 0.0001, 'WARNING', '02_reglas_calidad.csv')"), {"v": v_id})
+            if not lookup_id:
+                continue
+            v_id = conn.execute(text("SELECT variable_id FROM referencial.tbl_maestra_variables WHERE id_formato1 = :id"), {"id": int(lookup_id)}).scalar()
+            if not v_id:
+                continue
 
+            # ── Parsear Representatividad: ">0" → min=0.0001 | "0-100%" → min=0, max=100 ──
+            repres = str(row.get('Reglas de Calidad: Representatividad', '')).strip()
+            if repres == '0-100%':
+                v_min, v_max = 0.0, 100.0
+            elif repres.startswith('>'):
+                v_min, v_max = 0.0001, None
+            else:
+                v_min, v_max = 0.0001, None  # fallback
+
+            # ── Parsear Latencia: "< 2 s" → 2 segundos ──
+            latencia_raw = str(row.get('Reglas de Calidad: Latencia', '')).strip()
+            latencia_seg = 300  # default
+            lat_match = re.search(r'<\s*(\d+)', latencia_raw)
+            if lat_match:
+                latencia_seg = int(lat_match.group(1))
+
+            conn.execute(text("""
+                INSERT INTO referencial.tbl_dq_rules 
+                    (variable_id, valor_min, valor_max, latencia_max_segundos, severidad, origen_regla) 
+                VALUES (:v, :vmin, :vmax, :lat, 'WARNING', '02_reglas_calidad.csv')
+            """), {"v": v_id, "vmin": v_min, "vmax": v_max, "lat": latencia_seg})
+
+        # ── Paso 2: Enriquecer valor_max desde tbl_limites_pozo (solo donde no hay max del CSV) ──
+        updated = conn.execute(text("""
+            UPDATE referencial.tbl_dq_rules r
+            SET valor_max = lp.max_warning
+            FROM referencial.tbl_limites_pozo lp
+            WHERE r.variable_id = lp.variable_id
+              AND lp.max_warning IS NOT NULL
+              AND lp.max_warning > 0
+              AND r.valor_max IS NULL
+        """))
+        print(f"    DQ reglas: valor_max actualizado desde tbl_limites_pozo: {updated.rowcount} filas")
+
+        # ── Paso 3: Cargar Reglas de Consistencia (RC-001..RC-006) ──
         conn.execute(text("TRUNCATE TABLE referencial.tbl_reglas_consistencia RESTART IDENTITY CASCADE;"))
         rcs = [
-            ('RC-001', 'Carga Max > Min', 'max_rod_load_lb_act', '>', 'min_rod_load_lb_act'), 
-            ('RC-002', 'Carga Max > Peso Sarta', 'max_rod_load_lb_act', '>', 'rod_weight_buoyant_lb_act'), 
-            ('RC-003', 'Presión Cabezal < Fondo', 'well_head_pressure_psi_act', '<', 'flowing_bottom_hole_pressure_psi'), 
-            ('RC-004', 'Presión Fondo < Estática', 'flowing_bottom_hole_pressure_psi', '<', 'presion_estatica_yacimiento'), 
-            ('RC-005', 'Prof. Bomba < Prof. Vertical', 'profundidad_vertical_bomba', '<', 'profundidad_vertical_yacimiento'), 
-            ('RC-006', 'Díametro Émbolo < Radio Pozo', 'diametro_embolo_bomba', '<', 'radio_pozo')
+            ('RC-001', 'Validación Cargas de Varilla', 'CARGAS', 'max_rod_load_lb_act', '>', 'min_rod_load_lb_act', 'CRITICAL', 'La carga máxima debe ser mayor a la mínima durante el ciclo'),
+            ('RC-002', 'Carga Máxima vs Peso Sarta', 'CARGAS', 'max_rod_load_lb_act', '>', 'rod_weight_buoyant_lb_act', 'HIGH', 'La carga máxima debe superar el peso flotante de la sarta'),
+            ('RC-003', 'Gradiente Presión Vertical', 'PRESIONES', 'well_head_pressure_psi_act', '<', 'presion_fondo_fluyente_critico', 'CRITICAL', 'Presión cabezal menor a presión de fondo'),
+            ('RC-004', 'Validación Inflow Performance', 'PRESIONES', 'presion_fondo_fluyente_critico', '<', 'presion_estatica_yacimiento', 'HIGH', 'Presión fondo debe ser menor a presión estática'),
+            ('RC-005', 'Profundidad Bomba vs Yacimiento', 'GEOMETRIA', 'profundidad_vertical_bomba', '<', 'profundidad_vertical_yacimiento', 'MEDIUM', 'Bomba no puede estar más profunda que yacimiento'),
+            ('RC-006', 'Validación Geometría Radial', 'GEOMETRIA', 'radio_pozo', '<', 'radio_drenaje', 'MEDIUM', 'Radio del pozo debe ser menor al radio de drenaje')
         ]
-        for code, desc, v1, op, v2 in rcs:
+        for code, nombre, cat, v_med, op, v_ref, sev, desc in rcs:
             conn.execute(text("""
-                INSERT INTO referencial.tbl_reglas_consistencia (codigo_rc, descripcion, variable_a_id, operador, variable_b_id) 
+                INSERT INTO referencial.tbl_reglas_consistencia (
+                    codigo_regla, nombre_regla, categoria,
+                    variable_medida_id, operador_comparacion, variable_referencia_id,
+                    severidad, descripcion
+                ) 
                 SELECT 
-                    :c, 
-                    :d,
-                    (SELECT variable_id FROM referencial.tbl_maestra_variables WHERE nombre_tecnico = :v1 LIMIT 1), 
+                    :c, :n, :cat,
+                    (SELECT variable_id FROM referencial.tbl_maestra_variables WHERE nombre_tecnico = :v_med LIMIT 1), 
                     :op, 
-                    (SELECT variable_id FROM referencial.tbl_maestra_variables WHERE nombre_tecnico = :v2 LIMIT 1)
-            """), {"c": code, "d": desc, "v1": v1, "op": op, "v2": v2})
+                    (SELECT variable_id FROM referencial.tbl_maestra_variables WHERE nombre_tecnico = :v_ref LIMIT 1),
+                    :sev, :desc
+            """), {"c": code, "n": nombre, "cat": cat, "v_med": v_med, "op": op, "v_ref": v_ref, "sev": sev, "desc": desc})
+
+        # ── Paso 4: Vincular Variables ↔ Reglas Consistencia desde columna CSV ──
+        conn.execute(text("TRUNCATE TABLE referencial.tbl_dq_consistencia_map;"))
+        for _, row in df_reglas.iterrows():
+            id_f1_raw = str(row['ID_FORMATO_1']).strip().replace('*', '')
+            original_name = str(row['Nombre columna  de variable original']).strip()
+            lookup_id = id_f1_raw if id_f1_raw.isdigit() else SI_MAP.get(original_name)
+            if not lookup_id:
+                continue
+            lookup_id_int = int(lookup_id)
+            if lookup_id_int in EXCLUDE_CONSISTENCIA:
+                continue
+
+            consistencia_raw = str(row.get('Reglas de Calidad: Consistencia', '')).strip()
+            if not consistencia_raw or consistencia_raw == 'nan':
+                continue
+
+            v_id = conn.execute(text("SELECT variable_id FROM referencial.tbl_maestra_variables WHERE id_formato1 = :id"), {"id": lookup_id_int}).scalar()
+            if not v_id:
+                continue
+
+            # Parsear "RC-003, RC-004" → ['RC-003', 'RC-004']
+            rc_codes = [c.strip() for c in consistencia_raw.split(',') if c.strip().startswith('RC-')]
+            for rc_code in rc_codes:
+                rc_id = conn.execute(text("SELECT regla_id FROM referencial.tbl_reglas_consistencia WHERE codigo_regla = :c"), {"c": rc_code}).scalar()
+                if rc_id:
+                    conn.execute(text("""
+                        INSERT INTO referencial.tbl_dq_consistencia_map (variable_id, regla_consistencia_id) 
+                        VALUES (:v, :r)
+                        ON CONFLICT DO NOTHING
+                    """), {"v": v_id, "r": rc_id})
+
+        # Contar vínculos creados
+        map_count = conn.execute(text("SELECT count(*) FROM referencial.tbl_dq_consistencia_map")).scalar()
+        print(f"    DQ consistencia map: {map_count} vínculos variable↔RC creados")
 
 def load_limites_pozo():
     print(">>> Carga de Límites Operativos (Strict matching with Rangos)...")
@@ -202,7 +348,7 @@ def build_scada_map():
 
 if __name__ == "__main__":
     load_maestra_and_metadata()
+    load_limites_pozo()       # Antes de load_rules (provee max_warning para valor_max)
     load_rules()
-    load_limites_pozo()
     build_scada_map()
     print("=== REFERENCIAL V4 (STRICT & INTEGRATED) CARGADO CORRECTAMENTE ===")

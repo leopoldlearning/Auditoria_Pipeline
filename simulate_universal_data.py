@@ -23,21 +23,43 @@ DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NA
 engine = create_engine(DATABASE_URL)
 
 def generate_ipr_curve(qmax, pres_res):
-    # Vogel's IPR Equation: Qo / Qmax = 1 - 0.2*(Pwf/Pr) - 0.8*(Pwf/Pr)^2
-    points = 10
-    q_vals = []
-    pwf_vals = []
+    """Genera curva IPR teórica usando ecuación de Vogel."""
+    curve = {"q": [], "pwf": []}
+    steps = 20
+    for i in range(steps + 1):
+        pwf = (i / steps) * pres_res
+        # Vogel: q/qmax = 1 - 0.2(pwf/pr) - 0.8(pwf/pr)^2
+        ratio_p = pwf / pres_res
+        q = qmax * (1 - 0.2 * ratio_p - 0.8 * (ratio_p ** 2))
+        curve["pwf"].append(round(pwf, 2))
+        curve["q"].append(round(q, 2))
+    return curve
+
+def seed_patrones_cdi(conn):
+    """Inserta catálogo de patrones CDI estándar de la industria."""
+    patrones = [
+        ("Operación Normal",        "BAJA",    "Carta sin anomalías, forma rectangular típica."),
+        ("Golpe de Fluido",         "ALTA",    "Fluid Pound — llenado incompleto, impacto en fondo de carrera."),
+        ("Gas Lock",                "CRITICA", "Interferencia de gas libre, compresión sin desplazamiento de líquido."),
+        ("Fuga Válvula Viajera",    "ALTA",    "Travelling valve leak — pérdida de carga en carrera ascendente."),
+        ("Fuga Válvula Fija",       "ALTA",    "Standing valve leak — pérdida de carga en carrera descendente."),
+        ("Anclaje Deficiente",      "MEDIA",   "Tubing movement — elongación excesiva por falta de ancla."),
+        ("Varilla Partida",         "CRITICA", "Rod parting — pérdida súbita de carga en la carta."),
+        ("Fricción Excesiva",       "MEDIA",   "Alta fricción en la sarta de varillas o camisa de bomba."),
+    ]
+
+    for nombre, criticidad, descripcion in patrones:
+        conn.execute(text("""
+            INSERT INTO universal.patron (nombre, criticidad, descripcion)
+            VALUES (:nombre, :crit, :desc)
+            ON CONFLICT DO NOTHING
+        """), {"nombre": nombre, "crit": criticidad, "desc": descripcion})
     
-    for i in range(points + 1):
-        pwf = (pres_res / points) * i
-        ratio = pwf / pres_res
-        q = qmax * (1 - 0.2 * ratio - 0.8 * (ratio ** 2))
-        q_vals.append(round(max(0, q), 2))
-        pwf_vals.append(round(pwf, 2))
-        
-    return {"q": q_vals, "pwf": pwf_vals}
+    logger.info(f"  [CDI] {len(patrones)} patrones CDI insertados.")
+    return len(patrones)
 
 def populate_universal():
+    """Genera datos simulados y los inserta en el esquema Universal."""
     logger.info("Starting Universal Data Simulation...")
     
     with engine.begin() as conn:
@@ -48,28 +70,34 @@ def populate_universal():
             logger.warning("No wells found in stage.tbl_pozo_maestra. Skipping generation.")
             return
 
-        logger.info(f"Found {len(wells)} wells. Generating IPR and ARPS data...")
+        logger.info(f"Found {len(wells)} wells. Generating IPR, ARPS & CDI data...")
+
+        # ─────────────────────────────────────────
+        # 0. Seed CDI Patrones (catálogo)
+        # ─────────────────────────────────────────
+        num_patrones = seed_patrones_cdi(conn)
 
         for well in wells:
             well_id = well[0]
             well_name = well[1]
-            str_well_id = str(well_id) # Universal uses VARCHAR for IDs sometimes
+            str_well_id = str(well_id)
 
+            # ─────────────────────────────────────
             # 1. IPR Results
-            # Randomized Physics parameters
+            # ─────────────────────────────────────
             pres_res = random.uniform(2000, 4500)
             qmax = random.uniform(500, 3000)
-            ip = qmax / pres_res # Simplified PI
+            ip = qmax / pres_res
             
             curva = generate_ipr_curve(qmax, pres_res)
-            
-            # Insert IPR
+
             conn.execute(text("""
                 INSERT INTO universal.ipr_resultados 
-                (id_pozo, fecha_calculo, metodo, qmax, ip, curva_yacimiento, alertas)
+                (well_id, fecha_calculo, metodo, qmax_bpd, ip_factor, curva_yacimiento, alertas)
                 VALUES (:wid, :fecha, 'Vogel', :qmax, :ip, :curva, :alertas)
+                ON CONFLICT (well_id, fecha_calculo) DO NOTHING
             """), {
-                "wid": str_well_id,
+                "wid": well_id,
                 "fecha": datetime.now(),
                 "qmax": round(qmax, 2),
                 "ip": round(ip, 4),

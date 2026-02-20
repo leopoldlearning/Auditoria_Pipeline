@@ -1,0 +1,132 @@
+2026-02-19 18:40:14,988 - INFO - >>> INICIANDO CREACI├ôN DE ESQUEMAS <<<
+2026-02-19 18:40:15,262 - INFO - Forzando eliminaci├│n de esquemas antiguos...
+2026-02-19 18:40:15,503 - INFO - Exec: V4__stage_schema_redesign.sql...
+2026-02-19 18:40:15,647 - INFO - Ô£à V4__stage_schema_redesign.sql completado.
+2026-02-19 18:40:15,647 - INFO - Exec: V4__referencial_schema_redesign.sql...
+2026-02-19 18:40:15,887 - INFO - Ô£à V4__referencial_schema_redesign.sql completado.
+2026-02-19 18:40:15,888 - INFO - Exec: V1__universal_schema.sql...
+2026-02-19 18:40:15,939 - INFO - Ô£à V1__universal_schema.sql completado.
+2026-02-19 18:40:15,939 - INFO - Exec: V4__reporting_schema_redesign.sql...
+2026-02-19 18:40:16,124 - INFO - Ô£à V4__reporting_schema_redesign.sql completado.
+2026-02-19 18:40:16,124 - INFO - Exec: V6.1__historical_reporting_engine_v4.sql...
+2026-02-19 18:40:16,177 - INFO - Ô£à V6.1__historical_reporting_engine_v4.sql completado.
+2026-02-19 18:40:16,177 - INFO - Exec: V6.2__dq_engine_v4.sql...
+2026-02-19 18:40:16,182 - INFO - Ô£à V6.2__dq_engine_v4.sql completado.
+2026-02-19 18:40:16,182 - INFO - Exec: V6.3__sync_dim_pozo_targets_v4.sql...
+2026-02-19 18:40:16,184 - INFO - Ô£à V6.3__sync_dim_pozo_targets_v4.sql completado.
+2026-02-19 18:40:16,185 - INFO - Exec: V6__stored_procedures_v4_compatible.sql...
+2026-02-19 18:40:16,234 - INFO - Ô£à V6__stored_procedures_v4_compatible.sql completado.
+2026-02-19 18:40:16,242 - INFO - >>> BD INICIALIZADA CORRECTAMENTE <<<
+>>> Carga Maestra de Variables (STRICT IDs) y Metadatos...
+>>> Carga de Reglas DQ y RC...
+>>> Carga de L├¡mites Operativos (Strict matching with Rangos)...
+    L├¡mites cargados: 17
+>>> Sincronizaci├│n de Mapa SCADA...
+=== REFERENCIAL V4 (STRICT & INTEGRATED) CARGADO CORRECTAMENTE ===
+2026-02-19 18:40:19,920 - INFO - ====================================================
+2026-02-19 18:40:19,920 - INFO - >>> INGESTA H├ìBRIDA + LANDING SCADA (SQL)
+2026-02-19 18:40:19,920 - INFO - ====================================================
+2026-02-19 18:40:19,920 - INFO - ­ƒôé Ejecutando SQL: tbl_maestra_202602021632.sql
+2026-02-19 18:40:19,969 - INFO - Ô£à OK: tbl_maestra_202602021632.sql
+2026-02-19 18:40:19,969 - INFO - ­ƒôé Ejecutando SQL: tbl_pozo_produccion_202602021632.sql
+2026-02-19 18:40:19,979 - INFO - Ô£à OK: tbl_pozo_produccion_202602021632.sql
+2026-02-19 18:40:19,979 - INFO - ­ƒôÿ Ingestando RESERVAS desde Excel...
+2026-02-19 18:40:20,448 - INFO - Ô£à Reservas insertadas correctamente desde Excel.
+2026-02-19 18:40:20,448 - INFO - ­ƒôé Ejecutando SQL: landing_scada_data_202602021604.sql
+2026-02-19 18:40:20,511 - INFO - Ô£à OK: landing_scada_data_202602021604.sql
+2026-02-19 18:40:20,511 - INFO - >>> INGESTA COMPLETA <<<
+============================================================
+STARTING MASTER PIPELINE ORCHESTRATION
+Python Executable: auditor\Scripts\python.exe
+============================================================
+
+>>> 1. Re-initializing Schemas (Full Reset)...
+[OK] Init Schemas completed.
+
+>>> 1.5 Loading Referencial Master (Variables, Rangos, Mapas SCADA)...
+[OK] Referencial Master Loaded.
+
+>>> 2. Ingesting Real Telemetry (SQL Dumps)...
+[OK] Ingestion completed.
+
+>>> 3. Loading Universal Logic Engine (V5)...
+[SKIP] V5 Logic skipped (Covered by V6 in init_schemas).
+
+>>> 3.1 Running Data Quality Engine (V5 DQ)...
+[OK] Data Quality Validation completed.
+
+>>> 3.5 Loading Reporting Engine V2...
+[SKIP] Reporting Engine V2 skipped (Covered by V6.1 in init_schemas).
+
+>>> 5. Running Reporting Load (Daily, Hourly, Monthly)...
+[ERROR] Query Failed: 
+        CALL reporting.sp_load_to_reporting(
+            '2020-01-01'::DATE,
+            '2030-12-31'::DATE,
+            TRUE, TRUE, TRUE
+        );
+    
+Details: (psycopg2.errors.UndefinedColumn) column m.longitud_carrera_nominal_unidad does not exist
+LINE 31:         m.longitud_carrera_nominal_unidad,
+                 ^
+HINT:  Perhaps you meant to reference the column "m.longitud_carrera_nominal_unidad_in".
+QUERY:  INSERT INTO reporting.dim_pozo (
+        pozo_id,
+        nombre_pozo,
+        cliente,
+        pais,
+        region,
+        campo,
+        api_number,
+        coordenadas_pozo,
+        tipo_pozo,
+        tipo_levantamiento,
+        profundidad_completacion_ft,
+        diametro_embolo_bomba_in,
+        longitud_carrera_nominal_unidad_in, -- [V4] Renamed
+        potencia_nominal_motor_hp,
+        nombre_yacimiento
+    )
+    SELECT
+        m.well_id,
+        m.nombre_pozo,
+        m.cliente,
+        m.pais,
+        m.region,
+        m.campo,
+        m.api_number,
+        m.coordenadas_pozo,
+        m.tipo_pozo,
+        m.tipo_levantamiento,
+        m.profundidad_completacion,
+        m.diametro_embolo_bomba,
+        m.longitud_carrera_nominal_unidad,
+        m.potencia_nominal_motor,
+        m.nombre_yacimiento
+    FROM stage.tbl_pozo_maestra m
+    ON CONFLICT (pozo_id) DO UPDATE SET
+        nombre_pozo               = EXCLUDED.nombre_pozo,
+        cliente                   = EXCLUDED.cliente,
+        pais                      = EXCLUDED.pais,
+        region                    = EXCLUDED.region,
+        campo                     = EXCLUDED.campo,
+        api_number                = EXCLUDED.api_number,
+        coordenadas_pozo          = EXCLUDED.coordenadas_pozo,
+        tipo_pozo                 = EXCLUDED.tipo_pozo,
+        tipo_levantamiento        = EXCLUDED.tipo_levantamiento,
+        profundidad_completacion_ft = EXCLUDED.profundidad_completacion_ft,
+        diametro_embolo_bomba_in  = EXCLUDED.diametro_embolo_bomba_in,
+        longitud_carrera_nominal_unidad_in = EXCLUDED.longitud_carrera_nominal_unidad_in, -- [V4]
+        potencia_nominal_motor_hp = EXCLUDED.potencia_nominal_motor_hp,
+        nombre_yacimiento         = EXCLUDED.nombre_yacimiento,
+        fecha_ultima_actualizacion = CURRENT_TIMESTAMP
+CONTEXT:  PL/pgSQL function reporting.sp_load_to_reporting(date,date,boolean,boolean,boolean) line 19 at SQL statement
+
+[SQL: 
+        CALL reporting.sp_load_to_reporting(
+            '2020-01-01'::DATE,
+            '2030-12-31'::DATE,
+            TRUE, TRUE, TRUE
+        );
+    ]
+(Background on this error at: https://sqlalche.me/e/20/f405)

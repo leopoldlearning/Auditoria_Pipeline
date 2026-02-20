@@ -1,0 +1,376 @@
+Nombre de Tabla;Nombre de Variable;ID asociado(Primary Key)-vinculo que relaciona la variable;Categoría / Clasificación;Ident Dashboard Element(número del elemento o grafico dentro de cada panel del dashboard;Checklist;observacion;Frecuencia;;;;;
+reporting.dataset_current_values;well_id;1;Identificación (PK);No asignado;;;;;;;;
+reporting.dataset_current_values;well_head_pressure_psi_act;54;Presión Cabezal;9;ok;Crear tabla reporting_current_values;Instantánea;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;water_cut_pct;57;Producción;No asignado;;;;;;;;
+reporting.dataset_current_values;water_cut_pct;57;Corte de Agua (%);No asignado;;;;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;volumen_teorico_bbl;;KPIs Avanzados;No asignado;;Calculado;0;;;;;
+reporting.DIM_POZO;vol_eff_target;-;target;"""24-27""";ok;Crear tabla reporting_current_values y diaria para visualización. target. Meta de mejora definida como el Valor Baseline mas el 10%.  Calculo de Meta: Valor Baseline * 1.10 (Representa el incremento del 10% requerido sobre la base);Estática;;;;;
+reporting.dataset_current_values;vol_eff_status_color;-;color;24;ok;Crear tabla reporting_current_values . Semaforización: #00FF00 (Normal), #FFFF00 (Warning), #FFA500 (Alert), #FF0000 (Critical).;Instantánea;;;;;
+reporting.dataset_current_values;vol_eff_severity_label;-;etiqueta Visual;24;ok;Crear tabla reporting_current_values . Lógica Unipalabra (Lookup): 1. Var >= 1,1*(baseline): Normal. 2. Var 1,05-1,09.9*(baseline): Warning. 3. Var 1,0-1,04.9*(baseline): Alert. 4. Var < 0: Critical.;Instantánea;;;;;
+reporting.DIM_RLS_USUARIO;user_email;-;Seguridad y RLS (PK);34;;;;;;;;
+reporting.dataset_current_values;updated_at;-;Fecha Carga;34;;;;;;;;
+reporting.dataset_current_values;ultima_actualizacion;50;Timestamp Data;No asignado;;;;;;;;
+reporting.dataset_current_values;turno_operativo;-;Turno (Calc);34;;;;;;;;
+reporting.DIM_TIEMPO;trimestre;-;General / Calendario;No asignado;;;;;;;;
+reporting.DIM_POZO;total_reserves_bbl;128;Parámetros de Diseño;11;ok;;Estática;;;;;
+reporting.FACT_OPERACIONES_MENSUALES;total_petroleo_bbl;98;Totales;11;ok;cambiar por Produccion_Petroleo_Acumulada_bbl en reporting.fact_operaciones_mensuales;Mensual;;;;;
+reporting.FACT_OPERACIONES_MENSUALES;total_gas_mcf;100;Totales;No asignado;;;;;;;;
+reporting.FACT_OPERACIONES_MENSUALES;total_fluido_bbl;97;Totales;No asignado;;;;;;;;
+reporting.FACT_OPERACIONES_MENSUALES;total_fallas_mes;-;Eficiencia;34;;;;;;;;
+reporting.FACT_OPERACIONES_MENSUALES;total_agua_bbl;99;Totales;No asignado;;;;;;;;
+reporting.DIM_POZO;tipo_pozo;3;Identificación;No asignado;;;;;;;;
+reporting.DIM_POZO;tipo_levantamiento;37;Identificación;No asignado;;;;;;;;
+N/A;time_granularity;-;;;;“Selector de granularidad de tiempo para el Dashboard (Daily, Monthly, Last 30 days). La lógica de cambio de tabla se implementa en capa de modelo/BI, no en Stage”.;Estática;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;tiempo_paro_noprog_hrs;114;Operación;;;;;;;;;
+reporting.FACT_OPERACIONES_MENSUALES;tiempo_paro_hrs;126;Eficiencia (Acumulado);No asignado;;;;;;;;
+reporting.FACT_OPERACIONES_HORARIAS;tiempo_operacion_min;-;Tiempos y Estado;34;;;;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;tiempo_operacion_hrs;-;Operación;34;;;;;;;;
+reporting.FACT_OPERACIONES_MENSUALES;tiempo_operacion_hrs;102;Eficiencia (Acumulado);No asignado;;;;;;;;
+reporting.FACT_OPERACIONES_HORARIAS;temperatura_motor_f;83;Dinámica Promedio;No asignado;;;;;;;;
+reporting.DIM_POZO;tank_fluid_temperature_f_target;calculado;target;14;ok;Crear variable en  reporting.DIM_POZO. Target <= 150 °F;Estática;;;;;
+reporting.dataset_current_values;tank_fluid_temperature_f_severity_label;calculado;Etiqueta Visual;14;ok;"Crear variable en reporting current_values
+Normal: val <= 140 Verde.
+Warning: val > 140 AND val <= 160 Amarillo.
+Alert: val > 160 AND val <= 180  Naranja.
+Critical: val > 180 Rojo.";Instantánea;;;;;
+reporting.dataset_current_values;tank_fluid_temperature_f;94;;14;ok;Crear tabla reporting_current_values;Instantánea;;;;;
+reporting.dataset_current_values;tank_fluid_temp_status_color;calculado;Etiqueta Visual;14;ok;;Instantánea;;;;;
+reporting.FACT_OPERACIONES_HORARIAS;tank_fluid_temp_f;94;Dinámica Promedio;;;;;;;;;
+reporting.FACT_OPERACIONES_HORARIAS;spm_promedio;51;Dinámica Promedio;;;;Instantánea;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;spm_promedio;51;Operación;;;;Instantánea;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;spm_maximo;-;Operación;34;;;;;;;;
+reporting.DIM_HORA;shift_type;-;General / Hora;34;;;Estática;;;;;
+reporting.DIM_TIEMPO;semestre;-;General / Calendario;;;;;;;;;
+reporting.fact_operaciones_diarias;sat_event_marker;calculado;sat;"""27-28-29-30-31""";ok;Linea vertical referencial punteada para identificar la fecha y hora de instalacion del equipo. prueba SAT.;Estática;;;;;
+reporting.DIM_POZO;rod_weight_in_air_lb;72;Parámetros de Diseño;6;ok;;Estática;;;;;
+reporting.dataset_current_values;rod_weight_buoyant_lb_act;73;Peso Sarta (Flotante);6;ok;Crear tabla reporting_current_values;Instantánea;;;;;
+reporting.dataset_current_values;road_load_status_threshold_red;calculado;visualizacion;21;ok;Valor de 90 (Límite de diseño ID 47). Define el inicio de la zona crítica en el Gauge.;Instantánea;;;;;
+reporting.dataset_current_values;road_load_status_level;calculado;visualizacion;21;ok;"CASE
+
+WHEN (val < 50 OR val > 95) THEN 3 (Rojo)
+
+WHEN (val >= 90 AND val <= 95) THEN 2 (Naranja/Warning)
+
+WHEN (val >= 50 AND val < 90) THEN 1 (Verde: Óptimo)
+
+ELSE 3 END";Instantánea;;;;;
+reporting.dataset_current_values;road_load_status_legend_text;calculado;visualizacion;21;ok;Leyenda: CONCAT(eff_low, '% ≤ Target ≤ ', eff_high, '%').;Instantánea;;;;;
+reporting.dataset_current_values;road_load_status_label;calculado;visualizacion;21;ok;"Texto del estado: Lógica de Texto: Mapear el nivel a etiqueta:
+
+CASE
+WHEN status_level = 1 THEN 'Good'
+WHEN status_level = 2 THEN 'Warning (Design Exceeded)'
+WHEN status_level = 3 THEN 'Alert'
+END. Debe priorizar el límite de 90% como zona de 'Warning' aunque la eficiencia llegue a 95%.";Instantánea;;;;;
+reporting.DIM_POZO;road_load_status_eff_low;calculado;visualizacion;21;ok;Constante: Valor de 50 (Piso de eficiencia).;Estática;;;;;
+reporting.DIM_POZO;road_load_status_eff_high;calculado;visualizacion;21;ok;Constante: Valor de 95 (Techo de eficiencia);Estática;;;;;
+reporting.dataset_current_values;road_load_status_color;calculado;visualizacion;21;ok;"Código Hex para el color del número y el Gauge. Lógica de Formato: Asignar código Hex para uso directo en QuickSight:
+CASE
+WHEN status_level = 1 THEN '#00FF00' (Verde)
+WHEN status_level = 2 THEN '#FFA500' (Naranja)
+WHEN status_level = 3 THEN '#FF0000' (Rojo)
+END. Conditional Formatting usando esta variable.Color Naranja/Amarillo (#FFA500) para el rango 90-95%.";Instantánea;;;;;
+reporting.dataset_current_values;road_load_pct_act;calculado;referencia ID:81;21;ok;Crear variable en reporting.current_values. Fórmula:( ID 76 / ID 47)*100. ;Instantánea;;;;;
+reporting.FACT_OPERACIONES_MENSUALES;remanent_reserves_bbl;130;Totales;11;ok;Calculado. Inlcuir en reporting.fact_operaciones_mensuales;mensual;;;;;
+reporting.DIM_POZO;region;14;Identificación;38;;;Estática;;;;;
+reporting.dataset_current_values;region;14;Filtro Jerarquía;38;;;Estática;;;;;
+reporting.dataset_current_values;pwf_psi_act;151;PWF (Fuyente);9;ok;"Crear tabla reporting_current_values. Ingesta Horaria desde Motor Universal. Actualiza dataset_current_values""";Instantánea;;;;;
+reporting.dataset_current_values;pump_stroke_length_var_pct;;variacion;2;ok;Crear tabla reporting_current_values. Variación: ((act / target) - 1) * 100. ;Instantánea;;;;;
+reporting.dim_pozo;pump_stroke_length_target;;target;2;ok;Crear tabla reporting.DIM_POZO. <=360 in;Estática;;;;;
+reporting.dataset_current_values;pump_stroke_length_status_color;;color variacion;2;ok;Crear tabla reporting_current_values. Pump_Stroke_Lenght_satatus_color:>0:#00FF00 (Verde),<0  : #FF0000 (Rojo);Instantánea;;;;;
+reporting.dataset_current_values;pump_stroke_length_act;;;2;ok;Crear tabla reporting_current_values;Instantánea;;;;;
+reporting.dataset_current_values;pump_spm_var_pct;;variacion;1;ok;Crear tabla reporting_current_values. Variación: ((act / target) - 1) * 100. ;Instantánea;;;;;
+reporting.dim_pozo;pump_spm_target;;target;1;ok;Crear tabla reporting.DIM_POZO. <=2,1  spm;Estática;;;;;
+reporting.dataset_current_values;pump_spm_status_color;;color variacion;1;ok;Crear tabla reporting_current_values. Pump_SPM_status_color:>0:#00FF00 (Verde),<0  : #FF0000 (Rojo);Instantánea;;;;;
+reporting.dataset_current_values;pump_intake_pressure_psi_act;61;PIP (Intake);9;ok;Crear tabla reporting_current_values;Instantánea;;;;;
+reporting.dataset_current_values;pump_fill_monitor_var;;variacion;3;ok;Variación porcentual entre valor actual y meta;Instantánea;;;;;
+reporting.dim_pozo;pump_fill_monitor_target;;target;3;ok;Meta esperada de llenado de bomba (>= 80%);Estática;;;;;
+reporting.dataset_current_values;pump_fill_monitor_status_color;;color variacion;3;ok;Color según regla de severidad (Normal/Warning/Alert/Critical);Instantánea;;;;;
+reporting.dataset_current_values;pump_fill_monitor_pct;64;Llenado Bomba %;3;ok;Porcentaje de llenado de la bomba (valor actual);Instantánea;;;;;
+reporting.dataset_current_values;pump_discharge_pressure_psi_act;62;PDP (Descarga);9;ok;Crear tabla reporting_current_values;Instantánea;;;;;
+reporting.DIM_POZO;pump_depth_ft;39;Parámetros de Diseño;6;ok;;Estática;;;;;
+reporting.dataset_current_values;pump_avg_spm_act;51;SPM Actual;1;ok;Crear tabla reporting_current_values;Instantánea;;;;;
+reporting.FACT_OPERACIONES_MENSUALES;promedio_whp_psi;54;Promedios;;ok;;Instantánea;;;;;
+reporting.FACT_OPERACIONES_MENSUALES;promedio_water_cut_pct;57;Promedios;No asignado;;;;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;promedio_tank_fluid_temp_f;94;Operación;;;;;;;;;
+reporting.FACT_OPERACIONES_MENSUALES;promedio_tank_fluid_temp_f;94;Promedios;;;;;;;;;
+reporting.FACT_OPERACIONES_MENSUALES;promedio_spm;127;Promedios;No asignado;;;;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;promedio_pdp_psi;62;Operación;;ok;;Instantánea;;;;;
+reporting.FACT_OPERACIONES_MENSUALES;promedio_pdp_psi;62;Promedios;;ok;;Instantánea;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;promedio_motor_power_hp;66;Operación;;;;Instantánea;;;;;
+reporting.FACT_OPERACIONES_MENSUALES;promedio_motor_power_hp;66;Promedios;;;;Instantánea;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;promedio_lift_efficiency_pct;118;Operación;;;;Instantánea;;;;;
+reporting.FACT_OPERACIONES_MENSUALES;promedio_lift_efficiency_pct;118;Promedios;;;;Instantánea;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;promedio_fluid_level_tvd_ft;59;Operación;;;;Instantánea;;;;;
+reporting.FACT_OPERACIONES_MENSUALES;promedio_fluid_level_tvd_ft;59;Promedios;;;;Instantánea;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;promedio_fluid_flow_monitor_bpd;65;Operación;No asignado;;;;;;;;
+reporting.FACT_OPERACIONES_MENSUALES;promedio_fluid_flow_monitor_bpd;65;Promedios;No asignado;;;;;;;;
+reporting.FACT_OPERACIONES_MENSUALES;promedio_efic_vol_pct;-;Eficiencia;34;;;;;;;;
+reporting.FACT_OPERACIONES_MENSUALES;promedio_chp_psi;55;Promedios;;ok;;Instantánea;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;promedio_bouyant_rod_weight_lb;73;Operación;;;;Instantánea;;;;;
+reporting.FACT_OPERACIONES_MENSUALES;promedio_bouyant_rod_weight_lb;73;Promedios;;;;Instantánea;;;;;
+reporting.FACT_OPERACIONES_MENSUALES;prom_produccion_fluido_bbl;107;Producción;;;Incluir en operaciones mensuales. NO existe;Instantánea;;;;;
+reporting.DIM_POZO;profundidad_completacion_ft;2;Parámetros de Diseño;No asignado;;;;;;;;
+reporting.dataset_current_values;produccion_petroleo_diaria_bpd_act;108;Qo (Petróleo);7;ok;Crear tabla reporting_current_values;Instantánea;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;produccion_petroleo_bbl;108;Producción;7;ok;Cambiar en reporting diaria Produccion_Petroleo_bbl por Produccion_Petroleo_Diaria_bpd;Diaria;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;produccion_gas_mcf;110;Producción;No asignado;;;;;;;;
+reporting.dataset_current_values;produccion_fluido_bpd_act;107;Caudal instantáneo de fluido total (petróleo + agua);7;ok;Crear tabla reporting_current_values;Instantánea;;;;;
+reporting.FACT_OPERACIONES_HORARIAS;produccion_fluido_bbl;107;Producción (Delta);;;Incluir en reporting operaciones horarias. NO existe;Instantánea;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;produccion_fluido_bbl;107;Producción;7;ok;;Diaria;;;;;
+reporting.dataset_current_values;produccion_fluido_bpd_act;107;Qact / Qf (Total Fluido);"""7-9""";ok;Crear tabla reporting_current_values;Instantánea;;;;;
+reporting.dataset_current_values;produccion_agua_diaria_bpd_act;109;Qw (Agua);7;ok;Crear tabla reporting_current_values;Instantánea;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;produccion_agua_bbl;109;Producción;7;ok;;Diaria;;;;;
+reporting.FACT_OPERACIONES_HORARIAS;prod_petroleo_bbl;108;Producción (Delta);;;Cambiar en reporting horaria Prod_Petroleo_bbl por Prod_Petroleo_Diaria_bpd;hora;;;;;
+reporting.FACT_OPERACIONES_HORARIAS;prod_gas_mcf;110;Producción (Delta);No asignado;;;;;;;;
+reporting.FACT_OPERACIONES_HORARIAS;prod_agua_bbl;109;Producción (Delta);;;;Instantánea;;;;;
+reporting.FACT_OPERACIONES_HORARIAS;prod_acumulada_dia_bbl;-;Producción (Delta);34;;;;;;;;
+reporting.FACT_OPERACIONES_HORARIAS;presion_casing_psi;55;Dinámica Promedio;;ok;;Instantánea;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;presion_casing_psi;55;Energía y Dinámica;;ok;;Instantánea;;;;;
+reporting.FACT_OPERACIONES_HORARIAS;presion_cabezal_psi;54;Dinámica Promedio;;ok;;Instantánea;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;presion_cabezal_psi;54;Energía y Dinámica;;ok;;Instantánea;;;;;
+reporting.DIM_POZO;pozo_id;1;Identificación (PK);No asignado;;;Estática;;;;;
+reporting.DIM_RLS_USUARIO;pozo_id;1;Seguridad y RLS (PK);No asignado;;;;;;;;
+reporting.FACT_OPERACIONES_HORARIAS;pozo_id;1;Identificadores (FK);No asignado;;;;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;pozo_id;1;Identificadores (FK);No asignado;;;;;;;;
+reporting.FACT_OPERACIONES_MENSUALES;pozo_id;1;Identificadores (FK);No asignado;;;;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;potencia_promedio_kw;116;Energía y Dinámica;No asignado;;;;;;;;
+reporting.DIM_POZO;potencia_nominal_motor_hp;43;Parámetros de Diseño;15;ok;;Estática;;;;;
+reporting.FACT_OPERACIONES_HORARIAS;pip_psi;61;Dinámica Promedio;;ok;;Instantánea;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;pip_psi;61;Energía y Dinámica;;ok;;Instantánea;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;periodo_comparacion;-;Identificadores;34;;;;;;;;
+reporting.FACT_OPERACIONES_HORARIAS;pdp_psi;62;Dinámica Promedio;;ok;;Instantánea;;;;;
+reporting.DIM_POZO;pais;13;Identificación (RLS);No asignado;;;Estática;;;;;
+reporting.FACT_OPERACIONES_HORARIAS;numero_fallas_hora;-;Tiempos y Estado;34;;;hora;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;numero_fallas_avg_7d;115;Energía y Dinámica;22;ok;CREAR EN reporting.fact_operaciones_diarias4;Semanal;;;;;
+reporting.dataset_current_values;numero_fallas_act;115;Eventos POC;22;ok;Crear tabla reporting_current_values. Métrica futura;Instantánea;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;numero_fallas;115;Energía y Dinámica;22;ok;;Diaria;;;;;
+reporting.DIM_POZO;nombre_yacimiento;16;Parámetros de Diseño;No asignado;;;;;;;;
+reporting.DIM_POZO;nombre_pozo;49;Identificación;40;;;Estática;;;;;
+reporting.dataset_current_values;nombre_pozo;49;Etiqueta Visual;40;;;Estática;;;;;
+reporting.DIM_RLS_USUARIO;nivel_acceso;-;Seguridad y RLS;34;;;;;;;;
+reporting.dataset_current_values;mtbf_variance_pct;;KPIs Avanzados;23;ok;Valor Card (12,4%): Representa cuánto sobrepasa el actual al target.. Fórmula: ((MTBF_actual_val / MTBF_target) - 1) * 100.;Instantánea;;;;;
+reporting.DIM_POZO;mtbf_target;;target;"""23-31""";ok;Calculo en función del tiempo de operación no programado. Fórmula: (ID 102) * 0.95. Representa el 95% de las horas totales de operación que el equipo debería alcanzar sin fallas. Para visualización debe estar tambien en reportin.dataset_current_values;Estática;;;;;
+reporting.dataset_current_values;mtbf_status_color;;KPIs Avanzados;23;ok;Semáforo: Verde (#00FF00) si MTBF_variance_pct > 0. Rojo (#FF0000) si es < 0.;Instantánea;;;;;
+reporting.DIM_POZO;mtbf_baseline;calculado;Baseline;31;ok;Parámetros de Diseño.  Valor baseline suministrado por el cliente al momento de iniciar;Estática;;;;;
+reporting.dataset_current_values;motor_power_hp_act;66;Potencia (HP);15;ok;Consumo eléctrico real del motor.;Instantánea;;;;;
+reporting.FACT_OPERACIONES_HORARIAS;motor_power_hp;66;Dinámica Promedio;;;;Instantánea;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;motor_current_target;;Columna espejo para graficar la línea de umbral en el dashboard;16;ok;Crear variable en reporting. Fact_operaciones_ diarias. 95% de motor_current_rate;Estática;;;;;
+reporting.DIM_POZO;motor_current_target;;target;16;ok;Crear variable en reporting reporting.dim_pozo y fact_operaciones_diarias. 95% de motor_current_rate;Estática;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;motor_current_avg_7d;67;Dinámica Promedio semana;16;ok;Crear variable en reporting. Fact_operaciones_ diarias. ;Semanal;;;;;
+reporting.DIM_POZO;motor_current_a_rate;44;Parámetros de Diseño;16;ok;Crear variable en reporting reporting.dim_pozo;Estática;;;;;
+reporting.FACT_OPERACIONES_HORARIAS;motor_current_a_avg_hr;*67;Dinámica Promedio hora;;ok;Cambiar  Amperaje_Motor_A por el nombre motor_current_avg_hr en reporting.fact_operciones_horarias;hora;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;motor_current_a_avg_day;67;Diarias;16;ok;Crear variable en reporting fact.operaciones diarias;Diaria;;;;;
+reporting.dataset_current_values;motor_current_a_act;67;Amperaje (A) valor instantáneo;16;ok;Cambiar nombre en esquema current_values v.1;Instantánea;;;;;
+reporting.dataset_current_values;minutos_sin_reportar;-;Latencia (min);34;;;;;;;;
+reporting.dataset_current_values;min_rod_load_lb_act;77;Carga Mínima de Varillas., generalmente en el punto más bajo de la carrera;6;ok;Crear tabla reporting_current_values;Instantánea;;;;;
+reporting.dataset_current_values;min_pump_load_lb_act;74;" Carga Mínima de Bomba. Monitor de carga de la bomba id=74. ""ETL calcula Min/Max desde ID 74 y guarda el escalar en Reporting.""";6;ok;Crear tabla reporting_current_values;Instantánea;;;;;
+reporting.DIM_TIEMPO;mes_nombre;-;General / Calendario;;;;;;;;;
+reporting.DIM_TIEMPO;mes;-;General / Calendario;;;;;;;;;
+reporting.dataset_current_values;max_rod_load_lb_act;76;Carga Máxima de Varillas, generalmente en el punto más alto de la carrera;6;ok;Crear tabla reporting_current_values;Instantánea;;;;;
+reporting.dataset_current_values;max_pump_load_lb_act;74;"Carga_Max_bomba_lb. Carga Máxima de Bomba. Monitor de carga de la bomba id=74. ""ETL calcula Min/Max desde ID 74 y guarda el escalar en Reporting.""";6;ok;Crear tabla reporting_current_values;Instantánea;;;;;
+reporting.DIM_POZO;longitud_carrera_nominal_in;42;Parámetros de Diseño;12;;;Estática;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;llenado_bomba_pct;112;Energía y Dinámica;No asignado;;;;;;;;
+reporting.DIM_POZO;lift_efficiency_target;;target;5;ok;Meta esperada de eficiencia (target >= 60%);Estática;;;;;
+reporting.dataset_current_values;lift_efficiency_severity_label;;Etiqueta Visual ;5;ok;Severidad: ≥60 Normal, 50–59.99 Warning, 40–49.99 Alert, <40 Critical;Instantánea;;;;;
+reporting.dataset_current_values;lift_efficiency_pct_act;118;Eficiencia Sistema %;5;ok;Eficiencia de levantamiento actual (energía vs producción);Instantánea;;;;;
+reporting.FACT_OPERACIONES_HORARIAS;lift_efficiency_pct;118;Dinámica Promedio;;;;Instantánea;;;;;
+reporting.dataset_current_values;kpi_vol_eff_pct_act;-;KPIs Avanzados;24;ok;Crear tabla reporting_current_values;Instantánea;;;;;
+reporting.DIM_POZO;kpi_vol_eff_baseline;-;Baseline;27;ok;Crear en  tabla reporting.DIM_POZO;Estática;;;;;
+reporting.DIM_POZO;kpi_uptime_pct_target;106;Parámetros de Diseño (Críticos para KPIs);"""17-28""";ok;Crear tabla reporting.DIM_POZO.  target>=95;Estática;;;;;
+reporting.dataset_current_values;kpi_uptime_pct_status_color;;Etiqueta Visual;17;ok;"Crear variable en reporting.current_values.
+Normal: val >= 95 Verde (#00FF00).
+Warning: val >= 90 AND val < 95 Amarillo (#FFFF00)
+.Alert: val >= 80 AND val < 90   Naranja (#FFA500).
+Critical: val < 80  Rojo (#FF0000).";Instantánea;;;;;
+reporting.dataset_current_values;kpi_uptime_pct_severity_label;;Etiqueta Visual;17;ok;"Crear variable en reporting.current_values.
+Normal: val >= 95 Verde (#00FF00).
+Warning: val >= 90 AND val < 95 Amarillo (#FFFF00)
+.Alert: val >= 80 AND val < 90   Naranja (#FFA500).
+Critical: val < 80  Rojo (#FF0000).";Instantánea;;;;;
+reporting.dataset_current_values;kpi_uptime_pct_act;106;KPIs Avanzados;17;ok;Crear tabla en reporting_current_values;Instantánea;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;kpi_uptime_pct;106;KPIs Avanzados;28;ok;eliminar KPI_DOP_pct  y dejar solo kpi_uptime_pct en reporting. Fact_operaciones _diarias;Diaria;;;;;
+reporting.dataset_current_values;kpi_mtbf_hrs_act;-;KPIs Avanzados;23;ok;Valor Card: Es el MTBF calculado al cierre del día anterior para mostrar en el tablero principal;Instantánea;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;kpi_mtbf_hrs;-;KPIs Avanzados;31;ok;diaria;Diaria;;;;;
+reporting.DIM_POZO;kpi_kwh_bbl_target;calculado;target;"""25-29""";ok;Crear tabla reporting_current_values y diaria para visualizacion. Meta de reduccion definida como Baseline menos 15%. Calculo: Valor Baseline * 0.85;Estática;;;;;
+reporting.dataset_current_values;kpi_kwh_bbl_status_color;calculado;color;25;ok;Crear tabla reporting_current_values;Instantánea;;;;;
+reporting.dataset_current_values;kpi_kwh_bbl_severity_label;calculado;etiqueta Visual;;ok;Crear tabla reporting_current_values. Probabilidad de uso;Instantánea;;;;;
+reporting.FACT_OPERACIONES_MENSUALES;kpi_kwh_bbl_mes;71;Eficiencia;29;ok;;Diaria;;;;;
+reporting.DIM_POZO;kpi_kwh_bbl_baseline;calculado;Baseline;29;ok;Crear tabla reporting.DIM_POZO. Baseline=2,8 kwh/bbl;Estática;;;;;
+reporting.dataset_current_values;kpi_kwh_bbl_act;71;KPI Energía (kWh/bbl);25;ok;Crear tabla reporting_current_values;Instantánea;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;kpi_kwh_bbl;71;KPIs Avanzados;29;ok;;Diaria;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;kpi_fill_efficiency_pct;118;KPIs Avanzados;;;;Instantánea;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;kpi_efic_vol_pct;-;KPIs Avanzados;27;ok;Grafico de tendencia;Diaria;;;;;
+reporting.dataset_current_values;inclinacion_severidad_flag;;Target y Alarmas;19;ok;Crear variable en reporting current_values;Instantánea;;;;;
+reporting.dataset_current_values;inclinacion_cilindro_y_act;89;;19;ok;Crear variable en reporting current_values;Instantánea;;;;;
+reporting.dataset_current_values;inclinacion_cilindro_x_act;88;;19;ok;Crear variable en reporting current_values;Instantánea;;;;;
+reporting.dataset_current_values;hydraulic_load_status_threshold_red;calculado;;20;ok;Crear variable en reporting.current_values. (Límite de diseño de seguridad) Lógica de Referencia: Asignar el valor del límite de diseño (90%) para definir el inicio de la zona crítica en el gráfico de tipo Gauge.;Estática;;;;;
+reporting.dataset_current_values;hydraulic_load_status_level;calculado;;20;ok;"Crear variable en reporting.current_values.. Código numérico (1, 2, 3) para simplificar el formato condicional: Lógica de Control: Generar código numérico para semáforo:
+
+CASE
+WHEN (val < 50 OR val > 95) THEN 3 (Rojo: Alerta Crítica/Baja Eficiencia)
+WHEN (val >= 90 AND val <= 95) THEN 2 (Naranja: Fuera de Diseño/Alta Carga)
+WHEN (val >= 50 AND val < 90) THEN 1 (Verde: Operación Óptima)
+ELSE 3 END";Instantánea;;;;;
+reporting.dataset_current_values;hydraulic_load_status_legend_text;calculado;;20;ok;"Crear variable en reporting.current_values. Leyenda dinámica (ej: ""50% ≤ Target ≤ 95%"") (Materializado para evitar cuadros de texto estáticos. Custom Visual Content que lea esta variable. CONCAT(eff_low, '% ≤ Target ≤ ', eff_high, '%') -> Resultado: ""50% ≤ Target ≤ 95%""";Estática;;;;;
+reporting.dataset_current_values;hydraulic_load_status_label;calculado;;20;ok;"Crear variable en reporting.current_values. Texto del estado: Lógica de Texto: Mapear el nivel a etiqueta:
+
+CASE
+WHEN status_level = 1 THEN 'Good'
+WHEN status_level = 2 THEN 'Warning (Design Exceeded)'
+WHEN status_level = 3 THEN 'Alert'
+END. Debe priorizar el límite de 90% como zona de 'Warning' aunque la eficiencia llegue a 95%.";Instantánea;;;;;
+reporting.DIM_POZO;hydraulic_load_status_eff_low;calculado;Piso de Eficiencia;20;ok;Crear variable en reporting.DIM_POZO. Valor de 50%. Por debajo de esto, el equipo está subutilizado;Estática;;;;;
+reporting.DIM_POZO;hydraulic_load_status_eff_high;calculado;Techo de Eficiencia;20;ok;Crear variable en reporting.DIM_POZO.Valor de 95%. Es el límite máximo de producción;Estática;;;;;
+reporting.dataset_current_values;hydraulic_load_status_color;calculado;;20;ok;"Crear variable en reporting.current_values. Código Hex para el color del número y el Gauge. Lógica de Formato: Asignar código Hex para uso directo en QuickSight:
+CASE
+WHEN status_level = 1 THEN '#00FF00' (Verde)
+WHEN status_level = 2 THEN '#FFA500' (Naranja)
+WHEN status_level = 3 THEN '#FF0000' (Rojo)
+END. Conditional Formatting usando esta variable.Color Naranja/Amarillo (#FFA500) para el rango 90-95%.";Instantánea;;;;;
+reporting.DIM_POZO;hydraulic_load_rated_pct;calculado;Parámetros de Diseño;13;ok;"Calculado. Inlcuir en reporting.current_values.  Es un valor de referencia o consigna (setpoint). Indica qué porcentaje de la capacidad total se ha definido como el ""límite seguro"" de operación para ese pozo específico o la unidad. Dato suministrado por el cliente. Ejem: 90% de la capacidad nominal. Cambia si se reemplaza la unidad.(equipo)";Estática;;;;;
+reporting.DIM_POZO;hydraulic_load_rated_klb;46;Parámetros de Diseño;13;ok;"Verificar que venga transformada de ""lb a klb"" dividiendo entre mil en el proceso de transformación";Estática;;;;;
+reporting.DIM_HORA;hora_id;-;General / Hora (PK);34;;;Estática;;;;;
+reporting.FACT_OPERACIONES_HORARIAS;hora_id;-;Identificadores (FK);34;;;;;;;;
+reporting.DIM_HORA;hora_etiqueta;-;General / Hora;34;;;Estática;;;;;
+reporting.dataset_current_values;gas_today_mcf;110;Qg (Gas);No asignado;;;;;;;;
+reporting.dataset_current_values;gas_fill_status_color;;color variacion;4;ok;Crear tabla reporting_current_values. Gas_Fill_status_colorr:Normal :#00FF00 (Verde),Warning : #FFFF00 (Amarillo),Alert : #FFA500 (Naranja,)Critical : #FF0000 (Rojo);Instantánea;;;;;
+reporting.dataset_current_values;gas_fill_severity_label;;Etiqueta Visual;4;ok;"Crear tabla reporting_current_values. Lógica Unipalabra:
+
+1. IF (val <= 5) THEN 'Normal'
+
+2. ELSEIF (val > 5 AND val <= 15) THEN 'Warning'
+
+3. ELSEIF (val > 15 AND val <= 20) THEN 'Alert'
+
+4. ELSE 'Critical' END";Instantánea;;;;;
+reporting.dim_pozo;gas_fill_monitor_target;;target;4;ok;Crear tabla reporting.DIM_POZO.<=20%;Estática;;;;;
+reporting.dataset_current_values;gas_fill_monitor_pct_act;96;Monitor Gas;4;ok;Crear tabla reporting_current_values;Instantánea;;;;;
+reporting.DIM_POZO;formation_depth_ft;38;Parámetros de Diseño;6;ok;;Estática;;;;;
+reporting.FACT_OPERACIONES_HORARIAS;fluid_level_tvd_ft;59;Dinámica Promedio;;;;Instantánea;;;;;
+reporting.dataset_current_values;fluid_level_tvd_ft;59;Nivel Fluido (TVD);6;ok;Crear tabla reporting_current_values;Instantánea;;;;;
+reporting.FACT_OPERACIONES_HORARIAS;fluid_flow_monitor_bpd;65;Producción;No asignado;;;;;;;;
+reporting.dataset_current_values;fluid_flow_monitor_act_bpd;65;Monitor Flujo (Ref. IPR);No asignado;;;;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;flag_falla;-;Energía y Dinámica;34;;;;;;;;
+reporting.FACT_OPERACIONES_MENSUALES;fecha_ultima_carga;-;Auditoría;34;;;;;;;;
+reporting.DIM_POZO;fecha_ultima_actualizacion;-;Auditoría;34;;;;;;;;
+reporting.DIM_TIEMPO;fecha_id;6;General / Calendario (PK);36;;"Para filtros “Día”: el Dashboard usa FACT_OPERACIONES_HORARIAS o dataset_current_values.
+Para filtros “Mes/Año”: el Dashboard usa FACT_OPERACIONES_DIARIAS con la lógica de agregación definida";Estática;;;;;
+reporting.FACT_OPERACIONES_HORARIAS;fecha_id;-;Identificadores (FK);34;;;;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;fecha_id;6;General / Calendario (PK);36;;"Para filtros “Día”: el Dashboard usa FACT_OPERACIONES_HORARIAS o dataset_current_values.
+Para filtros “Mes/Año”: el Dashboard usa FACT_OPERACIONES_DIARIAS con la lógica de agregación definida";Estática;;;;;
+reporting.FACT_OPERACIONES_HORARIAS;fecha_hora;-;Identificadores;34;;;;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;fecha_carga;-;Metadatos;34;;;;;;;;
+reporting.DIM_TIEMPO;fecha;-;General / Calendario;;;;;;;;;
+reporting.DIM_POZO;falla_inclinacion_grados;91;Target y Alarmas;19;ok;Crear variable en reporting.DIM_POZO;Estática;;;;;
+reporting.FACT_OPERACIONES_MENSUALES;fact_mes_id;-;Identificadores (PK);34;;;;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;fact_id;-;Identificadores (PK);;;;;;;;;
+reporting.FACT_OPERACIONES_HORARIAS;fact_hora_id;-;Identificadores (PK);34;;;;;;;;
+reporting.dataset_current_values;estado_motor_on;120;Estado Motor (On/Off);17;ok;Crear tabla reporting_current_values;Instantánea;;;;;
+reporting.FACT_OPERACIONES_HORARIAS;estado_motor_fin_hora;120;Tiempos y Estado;;;;Instantánea;;;;;
+reporting.dataset_current_values;estado_comunicacion;-;Semáforo (Online/Offline);34;;;;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;emboladas_totales;111;Operación;No asignado;;;;;;;;
+reporting.FACT_OPERACIONES_MENSUALES;eficiencia_uptime_pct;106;Eficiencia;28;ok;dejar en reportes mensuales para filtros;Mensual;;;;;
+reporting.dataset_current_values;dq_status;-;Calidad Dato;34;;;;;;;;
+reporting.FACT_OPERACIONES_MENSUALES;dias_operando;-;Eficiencia;34;;;;;;;;
+reporting.DIM_POZO;diametro_embolo_bomba_in;33;Parámetros de Diseño;No asignado;;;;;;;;
+reporting.DIM_TIEMPO;dia_semana;-;General / Calendario;;;;;;;;;
+reporting.DIM_TIEMPO;dia;-;General / Calendario;;;;;;;;;
+reporting.DIM_POZO;daily_downtime_target;calculado;target;18;ok;crear variable en reporting.dataset_current_values;Estática;;;;;
+reporting.dataset_current_values;daily_downtime_status_color;calculado;color;18;ok;"crear variable en reporting.dataset_current_values
+1. Normal  #00FF00 (Verde)  
+2. Warning  #FFFF00 (Amarillo) 
+ 3. Alert  #FFA500 (Naranja)  
+4. Critical  #FF0000 (Rojo).";Instantánea;;;;;
+reporting.dataset_current_values;daily_downtime_severity_label;calculado;etiqueta Visual;18;ok;"crear variable en reporting.dataset_current_values
+Lógica Unipalabra (Target <=1.2h):  1. <= 1.2: Normal  
+2. 1.21 - 2.5: Warning 
+ 3. 2.51 - 4.0: Alert  
+4. > 4.0: Critical.";Instantánea;;;;;
+reporting.dataset_current_values;daily_downtime_act;114;Operación;18;ok;crear variable en reporting.dataset_current_values;Instantánea;;;;;
+reporting.dataset_current_values;current_stroke_length_act_in;68;carrera_actual_unidad. Calculado (Sacar máximo) de carta de superficie.Longitud de carrera actual de la unidad. Id=68(formato1);12;ok;Crear tabla reporting_current_values;Instantánea;;;;;
+reporting.DIM_POZO;coordenadas_pozo;4;Identificación;No asignado;;;;;;;;
+reporting.FACT_OPERACIONES_MENSUALES;consumo_energia_total_kwh;104;Eficiencia (Acumulado);No asignado;;;;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;consumo_energia_kwh;-;Energía y Dinámica;34;;;;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;completitud_datos_pct;-;Metadatos;34;;;;;;;;
+reporting.DIM_POZO;cliente;12;Identificación;37;;;Estática;;;;;
+reporting.dataset_current_values;cliente;12;Filtro Jerarquía;37;;;Estática;;;;;
+reporting.dataset_current_values;casing_head_pressure_psi_act;55;Presión Casing;9;ok;Crear tabla reporting_current_values;Instantánea;;;;;
+reporting.DIM_POZO;carga_minima_nominal_sarta;47;Parametros de diseño;21;ok;Crear variable en reporting.DIM_POZO. Peso nominal minimo de la sarta de varillas.  (Capacidad de diseño).;Estática;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;carga_min_rod_lb;77;Energía y Dinámica;;;;Instantánea;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;carga_max_rod_lb;76;Energía y Dinámica;;;;Diaria;;;;;
+reporting.DIM_POZO;campo;15;Identificación (RLS);39;;;Estática;;;;;
+reporting.dataset_current_values;campo;15;Filtro Jerarquía;39;;;Estática;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;calidad_datos_estado;-;Metadatos;34;;;;;;;;
+reporting.FACT_OPERACIONES_HORARIAS;bouyant_rod_weight_lb;73;Dinámica Promedio;;;;Instantánea;;;;;
+reporting.DIM_POZO;api_number;5;Identificación;No asignado;;;;;;;;
+reporting.DIM_POZO;api_max_fluid_load_lb_act;75;Parámetros de Diseño;6;ok;;Estática;;;;;
+reporting.DIM_TIEMPO;anio_mes;-;General / Calendario;;;;;;;;;
+reporting.FACT_OPERACIONES_MENSUALES;anio_mes;-;Identificadores;34;;;;;;;;
+reporting.DIM_TIEMPO;anio;-;General / Calendario;;;;;;;;;
+reporting.DIM_POZO;alerta_inclinacion_grados;90;Target y Alarmas;19;ok;Crear variable en  reporting.DIM_POZO;Estática;;;;;
+reporting.DIM_POZO;ai_accuracy_target;calculado;Parametros de diseño;"""26-30""";ok;Revisar con Marcelo;Estática;;;;;
+reporting.dataset_current_values;ai_accuracy_status_color;calculado;color;26;ok;"Crear variable en reporting.current_values.
+Normal: val >= 95 Verde (#00FF00).
+Warning: val >= 90 AND val < 95 Amarillo (#FFFF00)
+.Alert: val >= 80 AND val < 90   Naranja (#FFA500).
+Critical: val < 80  Rojo (#FF0000).";Instantánea;;;;;
+reporting.dataset_current_values;ai_accuracy_severity_label;calculado;Etiqueta Visual;;ok;Logica Unipalabra (Lookup): 1. act >= 90%: Normal. 2. act 85 a 89,9%: Warning. 3. act 80 a 84,9%: Alert. 4. act < 80%: Critical. Tabla referencial;Instantánea;;;;;
+reporting.FACT_OPERACIONES_DIARIAS;ai_accuracy_day;calculado;;30;ok;Revisar con Marcelo;Diaria;;;;;
+reporting.DIM_POZO;ai_accuracy_baseline;calculado;Parametros de diseño;30;ok;Revisar con Marcelo;Estática;;;;;
+reporting.dataset_current_values;ai_accuracy_act;calculado;;26;ok;Revisar con Marcelo;Instantánea;;;;;
+reporting.dataset_current_values; hydralift_unit_load_pct;calculado;% Carga Unidad;20;ok;Crear variable en reporting.current_values. Fórmula: (ID_76/ID_46)*100.;Instantánea;;;;;
+reporting.DIM_POZO; hydralift_unit_load_status_eff_low;calculado;Crear variable en reporting.DIM_POZO. Valor de 50%. Por debajo de esto, el equipo está subutilizado;20;ok;al igual que variables constantes, o umbrales y datos fijos, se debe crear en esquema de referencia;;;;;;
+reporting.DIM_POZO; hydralift_unit_load_status_eff_high;calculado;Crear variable en reporting.DIM_POZO.Valor de 95%. Es el límite máximo de producción;20;ok;al igual que variables constantes, o umbrales y datos fijos, se debe crear en esquema de referencia;Instantánea;;;;;
+reporting.FACT_OPERACIONES_HORARIAS;curva_ ipr;calculado;Proceso IPR;10;ok;"""Ingesta Horaria desde Capa Universal. Guardar Qmax, Pwf, Presión Yacimiento.""";hora;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;
+;;;;;;;;;;;;

@@ -6,7 +6,7 @@
 --   1. Tablas Dimensionales (Unidades, Estados, Paneles)
 --   2. Maestra de Variables (Alineada a Reporting V4)
 --   3. Mapa SCADA (Integración Stage - Anterior referencial_master.sql)
---   4. Reglas de Negocio (Límites Pozo, DQ, Consistencia)
+--   4. Reglas de Negocio (Límites Pozo, DQ, Consistencia, Mapa DQ↔RC)
 --   5. Funciones Utilitarias (Motores de Cálculo Semáforo)
 --------------------------------------------------------------------------------
 */
@@ -19,11 +19,12 @@ CREATE SCHEMA referencial;
 -- 2. TABLAS DIMENSIONALES (CATÁLOGOS)
 -- =============================================================================
 
--- 2.1 Unidades de Medida
+-- 2.1 Unidades de Medida (Estandarizadas desde 06_unidades_standar.csv)
 CREATE TABLE referencial.tbl_ref_unidades (
     unidad_id SERIAL PRIMARY KEY,
-    simbolo VARCHAR(20) NOT NULL UNIQUE, -- ej. 'psi', 'bbl/d'
-    descripcion VARCHAR(100)
+    simbolo VARCHAR(20) NOT NULL UNIQUE, -- Abreviatura canónica: 'psi', 'bbl', 'ft', 'mD'
+    nombre VARCHAR(100) NOT NULL,       -- Nombre completo: 'libra por pulgada cuadrada'
+    descripcion VARCHAR(200)             -- Descripción adicional (opcional)
 );
 
 -- 2.2 Estados Operativos (EL CORAZÓN DEL SEMÁFORO)
@@ -111,13 +112,85 @@ CREATE TABLE referencial.tbl_dq_rules (
 
 -- 3.3 Reglas de Consistencia (Física)
 CREATE TABLE referencial.tbl_reglas_consistencia (
-    codigo_rc VARCHAR(20) PRIMARY KEY,
+    regla_id SERIAL PRIMARY KEY,
+    codigo_regla VARCHAR(20) NOT NULL UNIQUE,
+    nombre_regla VARCHAR(100) NOT NULL,
+    categoria VARCHAR(50),
+    
+    -- Variable que se mide/evalúa vs Variable de referencia/límite
+    variable_medida_id INTEGER NOT NULL 
+        REFERENCES referencial.tbl_maestra_variables(variable_id),
+    operador_comparacion VARCHAR(10) NOT NULL 
+        CHECK (operador_comparacion IN ('>', '<', '>=', '<=', '=', '!=')),
+    variable_referencia_id INTEGER NOT NULL 
+        REFERENCES referencial.tbl_maestra_variables(variable_id),
+    
+    -- Metadatos
+    severidad VARCHAR(20) DEFAULT 'MEDIUM' NOT NULL
+        CHECK (severidad IN ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL')),
+    activo BOOLEAN DEFAULT TRUE NOT NULL,
     descripcion TEXT,
-    criterio_texto TEXT,
-    variable_a_id INTEGER REFERENCES referencial.tbl_maestra_variables(variable_id),
-    operador VARCHAR(5),
-    variable_b_id INTEGER REFERENCES referencial.tbl_maestra_variables(variable_id)
+    
+    -- Auditoría
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- 3.4 Mapa Variable ↔ Regla de Consistencia (Junction Table)
+-- Vincula cada variable al conjunto de reglas de consistencia física
+-- que debe cumplir, según la columna "Reglas de Calidad: Consistencia"
+-- del archivo 02_reglas_calidad.csv.
+-- Ejemplo: id_formato1=151 (FBHP) → debe cumplir RC-003 y RC-004.
+CREATE TABLE referencial.tbl_dq_consistencia_map (
+    variable_id INTEGER NOT NULL
+        REFERENCES referencial.tbl_maestra_variables(variable_id),
+    regla_consistencia_id INTEGER NOT NULL
+        REFERENCES referencial.tbl_reglas_consistencia(regla_id),
+    PRIMARY KEY (variable_id, regla_consistencia_id)
+);
+
+COMMENT ON TABLE referencial.tbl_dq_consistencia_map IS
+'Tabla de cruce: vincula variables con las reglas de consistencia física (RC-001..RC-006) que les aplican, según 02_reglas_calidad.csv.';
+
+-- Vista legible para consultas
+CREATE OR REPLACE VIEW referencial.vw_reglas_consistencia_legible AS
+SELECT 
+    rc.regla_id,
+    rc.codigo_regla,
+    rc.nombre_regla,
+    rc.categoria,
+    mv_med.nombre_tecnico AS variable_medida,
+    COALESCE(u_med.simbolo, '') AS unidad_medida,
+    rc.operador_comparacion,
+    mv_ref.nombre_tecnico AS variable_referencia,
+    COALESCE(u_ref.simbolo, '') AS unidad_referencia,
+    CONCAT(
+        mv_med.nombre_tecnico, 
+        ' ', rc.operador_comparacion, ' ', 
+        mv_ref.nombre_tecnico
+    ) AS expresion_formula,
+    CONCAT(
+        mv_med.nombre_tecnico, 
+        CASE WHEN u_med.simbolo IS NOT NULL THEN ' (' || u_med.simbolo || ')' ELSE '' END,
+        ' ', rc.operador_comparacion, ' ',
+        mv_ref.nombre_tecnico,
+        CASE WHEN u_ref.simbolo IS NOT NULL THEN ' (' || u_ref.simbolo || ')' ELSE '' END
+    ) AS expresion_completa,
+    rc.severidad,
+    rc.activo,
+    rc.descripcion,
+    rc.fecha_creacion,
+    rc.fecha_actualizacion
+FROM referencial.tbl_reglas_consistencia rc
+INNER JOIN referencial.tbl_maestra_variables mv_med 
+    ON rc.variable_medida_id = mv_med.variable_id
+INNER JOIN referencial.tbl_maestra_variables mv_ref 
+    ON rc.variable_referencia_id = mv_ref.variable_id
+LEFT JOIN referencial.tbl_ref_unidades u_med 
+    ON mv_med.unidad_id = u_med.unidad_id
+LEFT JOIN referencial.tbl_ref_unidades u_ref 
+    ON mv_ref.unidad_id = u_ref.unidad_id
+WHERE rc.activo = TRUE;
 
 -- =============================================================================
 -- 4. VISTAS Y UTILIDADES INTEGRADOS
@@ -381,3 +454,71 @@ BEGIN
     RETURN v_res;
 END;
 $$;
+
+
+-- =============================================================================
+-- SP: SEED DEFAULTS — Completa datos faltantes en tablas referenciales
+-- Idempotente: solo actualiza NULL → valor derivado. Seguro para re-run.
+-- =============================================================================
+CREATE OR REPLACE PROCEDURE referencial.sp_seed_defaults()
+LANGUAGE plpgsql AS $$
+BEGIN
+    -- 1. tbl_limites_pozo: baseline = target, critical = warning * factor
+    UPDATE referencial.tbl_limites_pozo
+    SET 
+        baseline_value = COALESCE(baseline_value, target_value),
+        min_critical   = COALESCE(min_critical, 
+            CASE WHEN min_warning IS NOT NULL AND min_warning > 0 THEN min_warning * 0.5
+                 WHEN min_warning = 0 THEN 0 ELSE NULL END),
+        max_critical   = COALESCE(max_critical, 
+            CASE WHEN max_warning IS NOT NULL THEN max_warning * 1.5 ELSE NULL END)
+    WHERE baseline_value IS NULL OR min_critical IS NULL OR max_critical IS NULL;
+
+    -- 2. tbl_maestra_variables: tabla_origen y volatilidad por clasificacion
+    UPDATE referencial.tbl_maestra_variables
+    SET 
+        tabla_origen = COALESCE(tabla_origen,
+            CASE clasificacion_logica
+                WHEN 'SENSOR' THEN 'landing_scada_data'
+                WHEN 'DISEÑO' THEN 'tbl_pozo_maestra'
+                WHEN 'KPI'    THEN 'dataset_current_values'
+                ELSE 'otros' END),
+        volatilidad = COALESCE(volatilidad,
+            CASE clasificacion_logica
+                WHEN 'SENSOR' THEN 'ALTA'
+                WHEN 'DISEÑO' THEN 'BAJA'
+                WHEN 'KPI'    THEN 'MEDIA'
+                ELSE 'MEDIA' END)
+    WHERE tabla_origen IS NULL OR volatilidad IS NULL;
+
+    -- 3. tbl_limites_pozo: corregir target kWh/bbl si viene de ejemplo del Rangos file
+    --    El campo 'ejemplo' del archivo Rangos suele tener ~2.0 (valor de muestra),
+    --    pero el target operativo real de industria es ~10.0 kWh/bbl.
+    UPDATE referencial.tbl_limites_pozo lp
+    SET target_value = 10.0
+    WHERE lp.variable_id = (
+        SELECT v.variable_id FROM referencial.tbl_maestra_variables v 
+        WHERE v.nombre_tecnico = 'kpi_kwh_bbl' OR v.id_formato1 = 49 
+        LIMIT 1
+    )
+    AND lp.target_value IS NOT NULL
+    AND lp.target_value < 5.0;  -- solo corregir si parece un valor de ejemplo
+
+    -- 4. tbl_ref_paneles_bi: descripcion
+    UPDATE referencial.tbl_ref_paneles_bi
+    SET descripcion = COALESCE(descripcion,
+        CASE panel_id
+            WHEN 1 THEN 'Panel de KPIs principales del pozo'
+            WHEN 2 THEN 'Panel de monitoreo de equipos y sensores'
+            WHEN 3 THEN 'Panel de producción y presiones'
+            WHEN 4 THEN 'Panel de información general del pozo'
+            ELSE 'Panel de operaciones #' || panel_id::TEXT END)
+    WHERE descripcion IS NULL;
+
+    RAISE NOTICE '[SEED] Defaults referenciales completados';
+END;
+$$;
+
+COMMENT ON PROCEDURE referencial.sp_seed_defaults IS 
+'Completa datos faltantes en tbl_limites_pozo, tbl_maestra_variables, tbl_ref_paneles_bi.
+Idempotente: solo actualiza columnas NULL. Seguro para re-run.';

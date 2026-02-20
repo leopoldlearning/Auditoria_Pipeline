@@ -23,7 +23,23 @@ AS $$
 DECLARE
     v_fecha_inicio DATE := COALESCE(p_fecha_inicio, CURRENT_DATE);
     v_fecha_fin    DATE := COALESCE(p_fecha_fin,    CURRENT_DATE);
+    -- Zero-Hardcode: constantes parametrizadas desde tbl_config_kpi
+    v_pump_displacement DECIMAL := 0.000971;  -- bbl/stroke
+    v_vol_eff_cap       DECIMAL := 150.00;    -- % techo
+    v_dq_ok_threshold   DECIMAL := 0.9;       -- ratio calidad datos
 BEGIN
+    -- ═══ Cargar constantes desde config (Zero-Hardcode) ═══
+    BEGIN
+        SELECT COALESCE(valor, 0.000971) INTO v_pump_displacement
+        FROM referencial.tbl_config_kpi WHERE kpi_nombre='PUMP_VOLUME' AND parametro='displacement_constant';
+        SELECT COALESCE(valor, 150.00) INTO v_vol_eff_cap
+        FROM referencial.tbl_config_kpi WHERE kpi_nombre='KPI_VOL_EFF' AND parametro='cap_pct';
+        SELECT COALESCE(valor, 0.9) INTO v_dq_ok_threshold
+        FROM referencial.tbl_config_kpi WHERE kpi_nombre='DATA_QUALITY' AND parametro='ok_threshold_pct';
+    EXCEPTION WHEN OTHERS THEN
+        RAISE NOTICE '[V6.1] Config no disponible, usando defaults internos';
+    END;
+
     ------------------------------------------------------------------------
     -- 1) DIMENSIONES BÁSICAS
     ------------------------------------------------------------------------
@@ -67,7 +83,7 @@ BEGIN
         m.tipo_levantamiento,
         m.profundidad_completacion,
         m.diametro_embolo_bomba,
-        m.longitud_carrera_nominal_unidad,
+        m.longitud_carrera_nominal_unidad_in,
         m.potencia_nominal_motor,
         m.nombre_yacimiento
     FROM stage.tbl_pozo_maestra m
@@ -109,6 +125,10 @@ BEGIN
                 AVG(p.temperatura_tanque_aceite)  AS temp_motor,   -- proxy
                 AVG(p.current_amperage)           AS amperaje,
                 AVG(p.potencia_actual_motor)      AS potencia,
+                MAX(p.longitud_carrera_nominal_unidad_in) AS stroke_length,
+
+                -- Fluid Flow Monitor (ID:65 formato1)
+                AVG(p.fluid_flow_monitor_bpd)    AS fluid_flow,
 
                 -- Acumuladores (estado al final de la hora)
                 MAX(p.produccion_petroleo_diaria) AS acum_oil,
@@ -214,6 +234,8 @@ BEGIN
             temperatura_motor_f,
             amperaje_motor_a,
             motor_power_hp,
+            current_stroke_length_in,
+            fluid_flow_monitor_bpd,
 
             tiempo_operacion_min,
             estado_motor_fin_hora,
@@ -241,6 +263,8 @@ BEGIN
             ROUND(d.temp_motor::NUMERIC, 2)         AS temperatura_motor_f,
             ROUND(d.amperaje::NUMERIC,   2)         AS amperaje_motor_a,
             ROUND(d.potencia::NUMERIC,   2)         AS motor_power_hp,
+            ROUND(d.stroke_length::NUMERIC, 2)        AS current_stroke_length_in,
+            ROUND(d.fluid_flow::NUMERIC, 2)            AS fluid_flow_monitor_bpd,
 
             LEAST(ROUND(d.run_min::NUMERIC, 2), 60.0) AS tiempo_operacion_min,
             d.algun_momento_encendido                AS estado_motor_fin_hora,
@@ -264,6 +288,8 @@ BEGIN
             temperatura_motor_f     = EXCLUDED.temperatura_motor_f,
             amperaje_motor_a        = EXCLUDED.amperaje_motor_a,
             motor_power_hp          = EXCLUDED.motor_power_hp,
+            current_stroke_length_in = EXCLUDED.current_stroke_length_in,
+            fluid_flow_monitor_bpd  = EXCLUDED.fluid_flow_monitor_bpd,
             
             tiempo_operacion_min    = EXCLUDED.tiempo_operacion_min,
             estado_motor_fin_hora   = EXCLUDED.estado_motor_fin_hora,
@@ -354,8 +380,8 @@ BEGIN
 
                 LEAST(dd.tiempo_op_raw, 24.0) AS tiempo_op_clean,
 
-                -- Volumen teórico (BBL)
-                (0.000971
+                -- Volumen teórico (BBL) — constante desde config
+                (v_pump_displacement
                  * POWER(pd.diametro_embolo_bomba_in, 2)
                  * pd.longitud_carrera_nominal_unidad_in
                  * dd.spm_promedio
@@ -441,17 +467,17 @@ BEGIN
             -- Volumen teórico
             k.vol_teorico,
 
-            -- Eficiencia volumétrica
+            -- Eficiencia volumétrica (cap 150% = V9 matching)
             CASE
                 WHEN k.vol_teorico > 0
-                    THEN (k.prod_fluido / k.vol_teorico) * 100.0
+                    THEN LEAST((k.prod_fluido / k.vol_teorico) * 100.0, v_vol_eff_cap)
                 ELSE 0
             END AS kpi_efic_vol_pct,
 
             -- DOP
             (k.tiempo_op_clean / 24.0) * 100.0 AS kpi_dop_pct,
 
-            -- KWH/BBL
+            -- KWH/BBL (denominador = producción petróleo)
             CASE
                 WHEN k.prod_petroleo > 0
                     THEN k.consumo_kwh / k.prod_petroleo
@@ -481,7 +507,7 @@ BEGIN
              / NULLIF(k.num_registros, 0)) * 100.0 AS completitud_datos_pct,
             CASE
                 WHEN (k.registros_validos::DECIMAL
-                      / NULLIF(k.num_registros, 0)) >= 0.9
+                      / NULLIF(k.num_registros, 0)) >= v_dq_ok_threshold
                     THEN 'OK'
                 ELSE 'WARNING'
             END AS calidad_datos_estado,
@@ -569,7 +595,7 @@ BEGIN
                 AVG(f.kpi_efic_vol_pct)                 AS promedio_efic_vol_pct,
                 SUM(f.consumo_energia_kwh)              AS consumo_energia_total_kwh,
 
-                -- KWH/BBL mensual (sobre petróleo)
+                -- KWH/BBL mensual (denominador = producción petróleo)
                 CASE
                     WHEN SUM(f.produccion_petroleo_bbl) > 0
                         THEN SUM(f.consumo_energia_kwh) / SUM(f.produccion_petroleo_bbl)
@@ -682,112 +708,9 @@ BEGIN
 END;
 $$;
 
-
 -- ============================================================
--- 2. PROCEDIMIENTO DE KPIs DE NEGOCIO (DIARIO + MENSUAL)
+-- NOTA: sp_load_kpi_business ELIMINADO (v3 Tier 2B).
+-- Era dead code: referenciaba columnas V3 (periodo, hora, uptime_actual)
+-- que no existen en V7 WIDE dataset_kpi_business.
+-- Reemplazado por: reporting.poblar_kpi_business() en V7__kpi_business_redesign.sql
 -- ============================================================
-
-CREATE OR REPLACE PROCEDURE reporting.sp_load_kpi_business(
-    p_fecha_inicio DATE,
-    p_fecha_fin DATE
-)
-LANGUAGE plpgsql
-AS $$
-BEGIN
-    ----------------------------------------------------------------------
-    -- 1. KPIs DIARIOS
-    ----------------------------------------------------------------------
-    INSERT INTO reporting.dataset_kpi_business (
-        fecha,
-        well_id,
-        nombre_pozo,
-        campo,
-        uptime_pct,
-        tiempo_operacion_hrs,
-        mtbf_dias,
-        fail_count,
-        costo_energia_usd,
-        kwh_por_barril,
-        lifting_cost_usd_bbl,
-        eur_remanente_bbl,
-        vida_util_estimada_dias
-    )
-    SELECT
-        dt.fecha,
-        d.pozo_id,
-        p.nombre_pozo,
-        p.campo,
-        d.kpi_uptime_pct,
-        d.tiempo_operacion_hrs,
-        CASE 
-            WHEN d.kpi_mtbf_hrs IS NOT NULL THEN d.kpi_mtbf_hrs / 24.0
-            ELSE NULL
-        END AS mtbf_dias,
-        d.numero_fallas,
-        NULL AS costo_energia_usd,
-        d.kpi_kwh_bbl,
-        NULL AS lifting_cost_usd_bbl,
-        NULL AS eur_remanente_bbl,
-        NULL AS vida_util_estimada_dias
-    FROM reporting.fact_operaciones_diarias d
-    JOIN reporting.dim_tiempo dt ON d.fecha_id = dt.fecha_id
-    JOIN reporting.dim_pozo p ON d.pozo_id = p.pozo_id
-    WHERE dt.fecha BETWEEN p_fecha_inicio AND p_fecha_fin
-      AND d.periodo_comparacion = 'DIARIO'
-    ON CONFLICT (fecha, well_id)
-    DO UPDATE SET
-        uptime_pct = EXCLUDED.uptime_pct,
-        tiempo_operacion_hrs = EXCLUDED.tiempo_operacion_hrs,
-        mtbf_dias = EXCLUDED.mtbf_dias,
-        fail_count = EXCLUDED.fail_count,
-        kwh_por_barril = EXCLUDED.kwh_por_barril;
-
-    ----------------------------------------------------------------------
-    -- 2. KPIs MENSUALES
-    ----------------------------------------------------------------------
-    INSERT INTO reporting.dataset_kpi_business (
-        fecha,
-        well_id,
-        nombre_pozo,
-        campo,
-        uptime_pct,
-        tiempo_operacion_hrs,
-        mtbf_dias,
-        fail_count,
-        costo_energia_usd,
-        kwh_por_barril,
-        lifting_cost_usd_bbl,
-        eur_remanente_bbl,
-        vida_util_estimada_dias
-    )
-    SELECT
-        TO_DATE(m.anio_mes || '-01', 'YYYY-MM'),
-        m.pozo_id,
-        p.nombre_pozo,
-        p.campo,
-        m.eficiencia_uptime_pct,
-        m.tiempo_operacion_hrs,
-        CASE 
-            WHEN m.total_fallas_mes > 0 THEN (m.tiempo_operacion_hrs / m.total_fallas_mes) / 24.0
-            ELSE NULL
-        END AS mtbf_dias,
-        m.total_fallas_mes,
-        NULL AS costo_energia_usd,
-        m.kpi_kwh_bbl_mes,
-        NULL AS lifting_cost_usd_bbl,
-        NULL AS eur_remanente_bbl,
-        NULL AS vida_util_estimada_dias
-    FROM reporting.fact_operaciones_mensuales m
-    JOIN reporting.dim_pozo p ON m.pozo_id = p.pozo_id
-    WHERE TO_DATE(m.anio_mes || '-01', 'YYYY-MM')
-          BETWEEN p_fecha_inicio AND p_fecha_fin
-    ON CONFLICT (fecha, well_id)
-    DO UPDATE SET
-        uptime_pct = EXCLUDED.uptime_pct,
-        tiempo_operacion_hrs = EXCLUDED.tiempo_operacion_hrs,
-        mtbf_dias = EXCLUDED.mtbf_dias,
-        fail_count = EXCLUDED.fail_count,
-        kwh_por_barril = EXCLUDED.kwh_por_barril;
-
-END;
-$$;

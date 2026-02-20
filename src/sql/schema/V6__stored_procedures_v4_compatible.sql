@@ -51,6 +51,34 @@ BEGIN
         produccion_petroleo_diaria_bpd_act,
         produccion_agua_diaria_bpd_act,
         
+        -- [V6.1] Campos de Carga y Eficiencia (Road Load & Lift Efficiency)
+        max_rod_load_lb_act,
+        min_rod_load_lb_act,
+        road_load_pct_act,
+        lift_efficiency_pct_act,
+        
+        -- [V6.2] Nuevos Mapeos Directos
+        kpi_kwh_bbl_act,                 -- ID:71 kwh_por_barril
+        kpi_uptime_pct_act,              -- ID:106 porcentaje_operacion_diario
+        tank_fluid_temperature_f,        -- ID:94 temperatura_tanque_aceite
+        current_stroke_length_act_in,    -- ID:42 longitud_carrera_nominal_unidad_in
+        
+        -- [V6.3] Mapeos adicionales
+        llenado_bomba_pct,               -- ID:64 pump_fill_monitor (alias)
+        daily_downtime_act,              -- ID:114 tiempo_parada_poc_diario
+        total_fluid_today_bbl,           -- Producción fluido acumulada
+        oil_today_bbl,                   -- Producción petróleo acumulada
+        water_today_bbl,                 -- Producción agua acumulada
+        gas_today_mcf,                   -- Producción gas acumulada
+        
+        -- [V6.5] Campos CALCULADOS (no mapeos)
+        carga_unidad_pct,                -- (carga_caja_engranajes / carga_nominal) * 100
+        turno_operativo,                 -- Derivado de hora
+        kpi_vol_eff_pct_act,             -- Alias de lift_efficiency
+        
+        -- [V6.6] KPI MTBF (Mean Time Between Failures)
+        kpi_mtbf_hrs_act,                -- horas_operacion / conteo_fallas
+        
         updated_at
     )
     SELECT DISTINCT ON (m.well_id)
@@ -80,6 +108,44 @@ BEGIN
         p.produccion_fluido_diaria, -- produccion_fluido_bpd_act
         p.produccion_petroleo_diaria, -- prod_petroleo_diaria_bpd_act
         p.produccion_agua_diaria,   -- produccion_agua_diaria_bpd_act
+        
+        -- [V6.1] Carga y Eficiencia calculados
+        p.maximum_rod_load,         -- max_rod_load_lb_act
+        p.minimum_rod_load,         -- min_rod_load_lb_act
+        ROUND((p.maximum_rod_load / NULLIF(m.carga_nominal_unidad, 0)) * 100, 2),  -- road_load_pct_act
+        p.eficiencia_levantamiento, -- lift_efficiency_pct_act
+        
+        -- [V6.2] Nuevos Mapeos Directos
+        p.kwh_por_barril,                    -- kpi_kwh_bbl_act
+        p.porcentaje_operacion_diario,       -- kpi_uptime_pct_act
+        p.temperatura_tanque_aceite,         -- tank_fluid_temperature_f
+        p.longitud_carrera_nominal_unidad_in,-- current_stroke_length_act_in
+        
+        -- [V6.3] Mapeos adicionales
+        p.pump_fill_monitor,                 -- llenado_bomba_pct (alias de pump_fill_monitor_pct)
+        p.tiempo_parada_poc_diario,          -- daily_downtime_act
+        p.produccion_fluido_diaria,          -- total_fluid_today_bbl
+        p.produccion_petroleo_diaria,        -- oil_today_bbl
+        p.produccion_agua_diaria,            -- water_today_bbl
+        p.produccion_gas_diaria,             -- gas_today_mcf
+        
+        -- [V6.5] Campos CALCULADOS (no mapeos)
+        ROUND((p.carga_caja_engranajes / NULLIF(m.carga_nominal_unidad, 0)) * 100, 2),  -- carga_unidad_pct
+        CASE 
+            WHEN EXTRACT(HOUR FROM p.timestamp_lectura) BETWEEN 6 AND 13 THEN 'DIA'
+            WHEN EXTRACT(HOUR FROM p.timestamp_lectura) BETWEEN 14 AND 21 THEN 'TARDE'
+            ELSE 'NOCHE'
+        END,                                 -- turno_operativo
+        p.eficiencia_levantamiento,          -- kpi_vol_eff_pct_act (alias)
+        
+        -- [V6.6] KPI MTBF: MTBF = Horas operación / Número de fallas
+        CASE 
+            WHEN COALESCE(p.conteo_poc_medidor_acum, 0) > 0 THEN 
+                ROUND(p.horas_operacion_acumuladas / p.conteo_poc_medidor_acum, 2)
+            WHEN COALESCE(p.horas_operacion_acumuladas, 0) > 0 THEN 
+                p.horas_operacion_acumuladas  -- Sin fallas = MTBF = todas las horas
+            ELSE NULL
+        END,                                 -- kpi_mtbf_hrs_act
         
         NOW()
     FROM stage.tbl_pozo_maestra m
@@ -112,146 +178,60 @@ BEGIN
         produccion_petroleo_diaria_bpd_act    = EXCLUDED.produccion_petroleo_diaria_bpd_act,
         produccion_agua_diaria_bpd_act  = EXCLUDED.produccion_agua_diaria_bpd_act,
         
+        -- [V6.1] Carga y Eficiencia
+        max_rod_load_lb_act        = EXCLUDED.max_rod_load_lb_act,
+        min_rod_load_lb_act        = EXCLUDED.min_rod_load_lb_act,
+        road_load_pct_act          = EXCLUDED.road_load_pct_act,
+        
+        -- [V6.2] Nuevos Mapeos
+        kpi_kwh_bbl_act            = EXCLUDED.kpi_kwh_bbl_act,
+        kpi_uptime_pct_act         = EXCLUDED.kpi_uptime_pct_act,
+        tank_fluid_temperature_f   = EXCLUDED.tank_fluid_temperature_f,
+        current_stroke_length_act_in = EXCLUDED.current_stroke_length_act_in,
+        lift_efficiency_pct_act    = EXCLUDED.lift_efficiency_pct_act,
+        
+        -- [V6.3] Mapeos adicionales
+        llenado_bomba_pct          = EXCLUDED.llenado_bomba_pct,
+        daily_downtime_act         = EXCLUDED.daily_downtime_act,
+        total_fluid_today_bbl      = EXCLUDED.total_fluid_today_bbl,
+        oil_today_bbl              = EXCLUDED.oil_today_bbl,
+        water_today_bbl            = EXCLUDED.water_today_bbl,
+        gas_today_mcf              = EXCLUDED.gas_today_mcf,
+        
+        -- [V6.5] Campos CALCULADOS
+        carga_unidad_pct           = EXCLUDED.carga_unidad_pct,
+        turno_operativo            = EXCLUDED.turno_operativo,
+        kpi_vol_eff_pct_act        = EXCLUDED.kpi_vol_eff_pct_act,
+        
+        -- [V6.6] KPI MTBF
+        kpi_mtbf_hrs_act           = EXCLUDED.kpi_mtbf_hrs_act,
+        
         ultima_actualizacion       = EXCLUDED.ultima_actualizacion,
         updated_at                 = NOW();
 
-    -- B. CÁLCULO MASIVO EN MEMORIA (Evaluación Universal con Nombres V4)
-    WITH calc AS (
-        SELECT 
-            curr.well_id,
-            dp.road_load_status_eff_low  AS rl_min_legacy, -- Fallback si no está en view
-            dp.road_load_status_eff_high AS rl_max_legacy,
-            
-            -- WHP
-            res_whp.color_hex       AS whp_color,
-            res_whp.nivel_severidad AS whp_sev,
-            
-            -- SPM
-            res_spm.color_hex       AS spm_color,
-            res_spm.variacion_pct   AS spm_var,
-            res_spm.target_value    AS spm_target_calc,
-            
-            -- FILL
-            res_fill.color_hex      AS fill_color,
-            res_fill.target_value   AS fill_target_calc,
-            res_fill.variacion_pct  AS fill_var,
-            
-            -- MTBF
-            res_mtbf.color_hex      AS mtbf_color,
-            res_mtbf.variacion_pct  AS mtbf_var,
-            
-            -- ROAD LOAD (Calculado aquí por ahora, ya que depende de % carga varilla que no está directo en curr)
-            -- Asumiremos que rod_weight_buoyant_lb_act ES el valor a comparar, o necesitamos convertir a PCT.
-            -- En V5: `road_load_pct_act` (columna) se comparaba.
-            -- En V4: `rod_weight_buoyant_lb_act` es LB. ¿Dónde está `road_load_pct_act`?
-            -- Si falta en V4 Dataset, usamos lógica simple o asumimos existe. 
-            -- Verificando V4 Schema: `road_load_pct_act` EXISTE en V3, ¿renombrada en V4? 
-            -- Mantenemos `road_load_pct_act` si existe, o calculamos.
-            -- Asumiremos `road_load_pct_act` en dataset.
-            
-            -- Targets estáticos
-            lim.spm_target          AS spm_target_lim,
-            lim.fill_target_val     AS fill_target_lim,
-            lim.rl_min_warn         AS rl_min_lim,
-            lim.rl_max_warn         AS rl_max_lim
-
-        FROM reporting.dataset_current_values curr
-        LEFT JOIN reporting.dim_pozo dp ON curr.well_id = dp.pozo_id -- Para legacy targets si view falla
-        LEFT JOIN referencial.vw_limites_pozo_pivot_v4 lim
-            ON curr.well_id = lim.pozo_id
-        
-        -- WHP (well_head_pressure_psi_act)
-        CROSS JOIN LATERAL referencial.fnc_evaluar_universal(
-            curr.well_head_pressure_psi_act, 
-            lim.whp_min_crit,
-            lim.whp_min_warn,
-            lim.whp_max_warn,
-            lim.whp_max_crit, 
-            NULL::DECIMAL,
-            NULL::DECIMAL
-        ) AS res_whp
-        
-        -- SPM (pump_avg_spm_act)
-        CROSS JOIN LATERAL referencial.fnc_evaluar_universal(
-            curr.pump_avg_spm_act, 
-            NULL::DECIMAL,
-            NULL::DECIMAL,
-            NULL::DECIMAL,
-            NULL::DECIMAL, 
-            lim.spm_target,
-            lim.spm_tol
-        ) AS res_spm
-        
-        -- FILL (pump_fill_monitor_pct)
-        CROSS JOIN LATERAL referencial.fnc_evaluar_universal(
-            curr.pump_fill_monitor_pct, 
-            lim.fill_min_crit,
-            lim.fill_min_warn,
-            lim.fill_max_warn,
-            lim.fill_max_crit, 
-            NULL::DECIMAL,
-            NULL::DECIMAL
-        ) AS res_fill
-
-    
-        -- MTBF (kpi_mtbf_hrs_act)
-        CROSS JOIN LATERAL referencial.fnc_evaluar_universal(
-            curr.kpi_mtbf_hrs_act, 
-            NULL::DECIMAL,
-            NULL::DECIMAL,
-            NULL::DECIMAL,
-            NULL::DECIMAL, 
-            dp.mtbf_target, -- From Dim Pozo
-            10.0 -- Tolerance default (hardcoded or from rules?)
-        ) AS res_mtbf
-
-    )
-    
-    -- C. UPDATE ÚNICO SOBRE DATASET_CURRENT_VALUES (Nombres V4)
+    -- B. CAMPOS DERIVADOS SIMPLES (semáforos delegados a V8 aplicar_evaluacion_universal)
+    -- ===================================================================================
+    -- NOTA: Toda la lógica de semáforos (CASE WHEN hardcodeados + fnc_evaluar_universal)
+    -- fue ELIMINADA de V6. V8 es el ÚNICO dueño de todos los semáforos vía fnc_evaluar_variable.
+    -- V6 solo conserva campos que V8 NO maneja: comunicación, water_cut, turno.
+    -- ===================================================================================
     UPDATE reporting.dataset_current_values tgt
     SET 
-        -- WHP
-        whp_status_color = c.whp_color,
-        dq_status = CASE
-            WHEN c.whp_sev >= 3 THEN 'FAIL'
-            ELSE 'PASS'
-        END,
-        
-        -- SPM
-        pump_spm_status_color = c.spm_color,
-        spm_target            = c.spm_target_calc,
-        pump_avg_spm_act      = tgt.pump_avg_spm_act,
-        pump_spm_var_pct      = c.spm_var,  -- [UPDATED] Populating Variance
-        
-        -- FILL
-        pump_fill_monitor_status_color = c.fill_color,
-        pump_fill_monitor_target       = c.fill_target_lim,
-        pump_fill_monitor_var          = c.fill_var, -- [UPDATED] Populating Variance
-        
-        -- MTBF
-        mtbf_status_color     = c.mtbf_color,
-        mtbf_variance_pct     = c.mtbf_var, -- [UPDATED] Populating Variance
-        
-        -- ROAD LOAD (Restaurado V5 Logic)
-        road_load_status_color = CASE
-             WHEN tgt.road_load_pct_act IS NULL THEN '#B0B0B0'
-             WHEN (tgt.road_load_pct_act < COALESCE(c.rl_min_lim, 0) OR tgt.road_load_pct_act > COALESCE(c.rl_max_lim, 100)) 
-                 THEN '#FF4444' -- CRITICAL
-             WHEN (tgt.road_load_pct_act >= (COALESCE(c.rl_max_lim, 100) - 5) AND tgt.road_load_pct_act <= COALESCE(c.rl_max_lim, 100)) 
-                 THEN '#FFBB33' -- WARNING
-             ELSE '#00C851' -- NORMAL
-        END,
-        road_load_status_legend_text = CONCAT(COALESCE(c.rl_min_lim,0), '% <= Target <= ', COALESCE(c.rl_max_lim,100), '%'),
-        
-        -- Estado de comunicación
+        -- Estado de comunicación (no es semáforo de KPI, es estado de conectividad)
         color_estado_comunicacion = CASE 
             WHEN EXTRACT(EPOCH FROM (NOW() - tgt.ultima_actualizacion))/60 > 60
                 THEN '#B0B0B0' -- OFFLINE
             ELSE '#00C851'    -- NORMAL
-        END
-    FROM calc c
-    WHERE tgt.well_id = c.well_id;
+        END,
+        minutos_sin_reportar = ROUND(EXTRACT(EPOCH FROM (NOW() - tgt.ultima_actualizacion))/60)::INT,
+        estado_comunicacion = CASE 
+            WHEN EXTRACT(EPOCH FROM (NOW() - tgt.ultima_actualizacion))/60 > 60 THEN 'OFFLINE'
+            WHEN EXTRACT(EPOCH FROM (NOW() - tgt.ultima_actualizacion))/60 > 30 THEN 'DELAYED'
+            ELSE 'ONLINE'
+        END,
+        -- Water cut derivado
+        water_cut_pct = ROUND((tgt.produccion_agua_diaria_bpd_act / NULLIF(tgt.produccion_fluido_bpd_act, 0)) * 100, 2);
 
-    RAISE NOTICE 'Snapshot V4 actualizado (Zero-Calc + Universal Eval + Variaciones + Road Load).';
+    RAISE NOTICE 'Snapshot V4 actualizado (UPSERT datos crudos + campos derivados). Semáforos delegados a V8.';
 END;
 $$;

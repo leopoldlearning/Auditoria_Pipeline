@@ -114,7 +114,9 @@ FROM reporting.dim_tiempo ORDER BY anio, mes;
 -- 2. CAPA TRANSACCIONAL HISTÓRICA (Facts Actualizadas)
 -- =============================================================================
 
--- 2.1 fact_operaciones_horarias
+-- 2.1 fact_operaciones_horarias (PARTICIONADA POR RANGO fecha_id)
+-- MEJORA: Tabla particionada por año para escalabilidad a 500+ pozos.
+-- fecha_id formato YYYYMMDD permite pruning eficiente por rango de fechas.
 DROP TABLE IF EXISTS reporting.fact_operaciones_horarias CASCADE;
 CREATE TABLE IF NOT EXISTS reporting.fact_operaciones_horarias (
     fact_hora_id BIGINT GENERATED ALWAYS AS IDENTITY,
@@ -153,12 +155,97 @@ CREATE TABLE IF NOT EXISTS reporting.fact_operaciones_horarias (
 
     -- [NUEVO] Integración Universal
     ipr_qmax_teorico DECIMAL(10,2),
+
+    -- ═══════════════════════════════════════════════════════════════════════
+    -- KPI 1: MTBF (Mean Time Between Failures) – Horas acumuladas
+    -- MTBF horario = horas acumuladas de operación / fallas acumuladas
+    -- Si no hay fallas, MTBF = total horas acumuladas de operación
+    -- ═══════════════════════════════════════════════════════════════════════
+    kpi_mtbf_hrs DECIMAL(10, 2),
+    kpi_mtbf_target DECIMAL(10, 2),
+    kpi_mtbf_baseline DECIMAL(10, 2),
+    kpi_mtbf_variance_pct DECIMAL(8, 2),
+    kpi_mtbf_status_color VARCHAR(7),
+    kpi_mtbf_status_level INTEGER,
+    kpi_mtbf_severity_label VARCHAR(20),
+
+    -- ═══════════════════════════════════════════════════════════════════════
+    -- KPI 2: UPTIME (Disponibilidad) – % de la hora operando
+    -- uptime = (tiempo_operacion_min / 60) * 100
+    -- ═══════════════════════════════════════════════════════════════════════
+    kpi_uptime_pct DECIMAL(5, 2),
+    kpi_uptime_target DECIMAL(5, 2),
+    kpi_uptime_baseline DECIMAL(5, 2),
+    kpi_uptime_variance_pct DECIMAL(8, 2),
+    kpi_uptime_status_color VARCHAR(7),
+    kpi_uptime_status_level INTEGER,
+    kpi_uptime_severity_label VARCHAR(20),
+
+    -- ═══════════════════════════════════════════════════════════════════════
+    -- KPI 3: KWH_BBL (Eficiencia Energética) – kWh/barril en la hora
+    -- kwh_bbl = (motor_power_hp * 0.7457 * tiempo_op_hrs) / produccion_fluido_bbl
+    -- ═══════════════════════════════════════════════════════════════════════
+    kpi_kwh_bbl DECIMAL(10, 4),
+    kpi_kwh_bbl_target DECIMAL(10, 4),
+    kpi_kwh_bbl_baseline DECIMAL(10, 4),
+    kpi_kwh_bbl_variance_pct DECIMAL(8, 2),
+    kpi_kwh_bbl_status_color VARCHAR(7),
+    kpi_kwh_bbl_status_level INTEGER,
+    kpi_kwh_bbl_severity_label VARCHAR(20),
+
+    -- ═══════════════════════════════════════════════════════════════════════
+    -- KPI 4: VOL_EFF (Eficiencia Volumétrica) – % producción real vs teórica
+    -- vol_eff = (produccion_fluido_bbl / volumen_teorico_bbl) * 100
+    -- ═══════════════════════════════════════════════════════════════════════
+    volumen_teorico_hora_bbl DECIMAL(12, 2),
+    kpi_efic_vol_pct DECIMAL(10, 2),
+    kpi_vol_eff_target DECIMAL(5, 2),
+    kpi_vol_eff_baseline DECIMAL(5, 2),
+    kpi_vol_eff_variance_pct DECIMAL(8, 2),
+    kpi_vol_eff_status_color VARCHAR(7),
+    kpi_vol_eff_status_level INTEGER,
+    kpi_vol_eff_severity_label VARCHAR(20),
+
+    -- ═══════════════════════════════════════════════════════════════════════
+    -- KPI 5: AI_ACCURACY (Precisión IA) – Sin modelo activo, placeholder
+    -- ═══════════════════════════════════════════════════════════════════════
+    kpi_ai_accuracy_pct DECIMAL(5, 2),
+    kpi_ai_accuracy_target DECIMAL(5, 2),
+    kpi_ai_accuracy_baseline DECIMAL(5, 2),
+    kpi_ai_accuracy_variance_pct DECIMAL(8, 2),
+    kpi_ai_accuracy_status_color VARCHAR(7),
+    kpi_ai_accuracy_status_level INTEGER,
+    kpi_ai_accuracy_severity_label VARCHAR(20),
+
+    -- ═══════════════════════════════════════════════════════════════════════
+    -- KPI 6: LIFT EFFICIENCY – Eficiencia de levantamiento del rod pump
+    -- Valor raw ya existe como lift_efficiency_pct. Aquí sus derivados.
+    -- ═══════════════════════════════════════════════════════════════════════
+    kpi_lift_eff_target DECIMAL(5, 2),
+    kpi_lift_eff_baseline DECIMAL(5, 2),
+    kpi_lift_eff_variance_pct DECIMAL(8, 2),
+    kpi_lift_eff_status_color VARCHAR(7),
+    kpi_lift_eff_status_level INTEGER,
+    kpi_lift_eff_severity_label VARCHAR(20),
     
-    PRIMARY KEY (fecha_id, hora_id, pozo_id),
-    CONSTRAINT fk_h_tiempo FOREIGN KEY (fecha_id) REFERENCES reporting.dim_tiempo(fecha_id),
-    CONSTRAINT fk_h_hora FOREIGN KEY (hora_id) REFERENCES reporting.dim_hora(hora_id),
-    CONSTRAINT fk_h_pozo FOREIGN KEY (pozo_id) REFERENCES reporting.dim_pozo(pozo_id)
-);
+    PRIMARY KEY (fecha_id, hora_id, pozo_id)
+    -- FK constraints removidas para compatibilidad con particionamiento
+    -- Las dimensiones se validan a nivel de ETL (sp_load_to_reporting)
+) PARTITION BY RANGE (fecha_id);
+
+-- Particiones anuales (2020-2030) + default
+CREATE TABLE IF NOT EXISTS reporting.fact_horarias_y2020 PARTITION OF reporting.fact_operaciones_horarias FOR VALUES FROM (20200101) TO (20210101);
+CREATE TABLE IF NOT EXISTS reporting.fact_horarias_y2021 PARTITION OF reporting.fact_operaciones_horarias FOR VALUES FROM (20210101) TO (20220101);
+CREATE TABLE IF NOT EXISTS reporting.fact_horarias_y2022 PARTITION OF reporting.fact_operaciones_horarias FOR VALUES FROM (20220101) TO (20230101);
+CREATE TABLE IF NOT EXISTS reporting.fact_horarias_y2023 PARTITION OF reporting.fact_operaciones_horarias FOR VALUES FROM (20230101) TO (20240101);
+CREATE TABLE IF NOT EXISTS reporting.fact_horarias_y2024 PARTITION OF reporting.fact_operaciones_horarias FOR VALUES FROM (20240101) TO (20250101);
+CREATE TABLE IF NOT EXISTS reporting.fact_horarias_y2025 PARTITION OF reporting.fact_operaciones_horarias FOR VALUES FROM (20250101) TO (20260101);
+CREATE TABLE IF NOT EXISTS reporting.fact_horarias_y2026 PARTITION OF reporting.fact_operaciones_horarias FOR VALUES FROM (20260101) TO (20270101);
+CREATE TABLE IF NOT EXISTS reporting.fact_horarias_y2027 PARTITION OF reporting.fact_operaciones_horarias FOR VALUES FROM (20270101) TO (20280101);
+CREATE TABLE IF NOT EXISTS reporting.fact_horarias_y2028 PARTITION OF reporting.fact_operaciones_horarias FOR VALUES FROM (20280101) TO (20290101);
+CREATE TABLE IF NOT EXISTS reporting.fact_horarias_y2029 PARTITION OF reporting.fact_operaciones_horarias FOR VALUES FROM (20290101) TO (20300101);
+CREATE TABLE IF NOT EXISTS reporting.fact_horarias_y2030 PARTITION OF reporting.fact_operaciones_horarias FOR VALUES FROM (20300101) TO (20310101);
+CREATE TABLE IF NOT EXISTS reporting.fact_horarias_default PARTITION OF reporting.fact_operaciones_horarias DEFAULT;
 
 -- 2.2 fact_operaciones_diarias
 DROP TABLE IF EXISTS reporting.fact_operaciones_diarias CASCADE;
@@ -384,7 +471,7 @@ CREATE TABLE IF NOT EXISTS reporting.dataset_current_values (
     kpi_kwh_bbl_severity_label VARCHAR(20),
     
     kpi_mtbf_hrs_act DECIMAL(10,2),
-    mtbf_variance_pct DECIMAL(5,2),  -- [V4 RENAMED] Antes: kpi_mtbf_variance_pct
+    mtbf_variance_pct DECIMAL(8,2),  -- [V4 RENAMED] Antes: kpi_mtbf_variance_pct
     mtbf_status_color VARCHAR(7),
     
     kpi_vol_eff_pct_act DECIMAL(5,2),
