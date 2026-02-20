@@ -300,9 +300,9 @@ CREATE TABLE IF NOT EXISTS reporting.fact_operaciones_diarias (
     kpi_uptime_pct DECIMAL(10, 2),
     kpi_fill_efficiency_pct DECIMAL(10, 2),
     
-    -- [NUEVO] Costos y Reservas
-    costo_operativo_estimado_usd DECIMAL(12,2),
+    -- [NUEVO] ARPS & AI
     eur_modelo_arps DECIMAL(14,2),
+    ai_accuracy_pct DECIMAL(5, 2),
 
     -- Metadatos
     calidad_datos_estado VARCHAR(20),
@@ -520,22 +520,19 @@ CREATE TABLE IF NOT EXISTS reporting.dataset_current_values (
 CREATE INDEX IF NOT EXISTS idx_curr_campo ON reporting.dataset_current_values(campo);
 CREATE INDEX IF NOT EXISTS idx_curr_region ON reporting.dataset_current_values(region);
 
--- 3.2 dataset_kpi_business
+-- 3.2 dataset_kpi_business (esqueleto V4 — V7 lo recrea WIDE con semáforos)
 CREATE TABLE IF NOT EXISTS reporting.dataset_kpi_business (
     kpi_id BIGINT GENERATED ALWAYS AS IDENTITY,
     fecha DATE,
     well_id INT,
     nombre_pozo VARCHAR(100),
     campo VARCHAR(100),
-    uptime_pct DECIMAL(5,2),           
-    tiempo_operacion_hrs DECIMAL(4,2),
-    mtbf_dias DECIMAL(10,2),
-    fail_count INT,
-    costo_energia_usd DECIMAL(12,2),
-    kwh_por_barril DECIMAL(10,4),
-    lifting_cost_usd_bbl DECIMAL(10,2),
-    eur_remanente_bbl DECIMAL(14,2),
-    vida_util_estimada_dias INT,
+    kpi_uptime_pct DECIMAL(5,2),
+    kpi_mtbf_hrs DECIMAL(10,2),
+    kpi_mtbf_days DECIMAL(10,2),
+    kpi_vol_eff_pct DECIMAL(5,2),
+    kpi_kwh_bbl DECIMAL(10,4),
+    ai_accuracy_pct DECIMAL(5,2),
     PRIMARY KEY (fecha, well_id)
 );
 

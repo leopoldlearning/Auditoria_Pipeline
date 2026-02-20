@@ -10,23 +10,23 @@ Propósito: Tabla WIDE consolidada para BI con 3 períodos por KPI en columnas,
 
 LAYOUT DE NOMENCLATURA ESTANDARIZADO:
 ─────────────────────────────────────
-kpi_{metric}_current        → Snapshot actual (dataset_current_values)
-kpi_{metric}_dia            → Agregado diario (fact_operaciones_diarias)
-kpi_{metric}_mes            → Agregado mensual (fact_operaciones_mensuales)
-kpi_{metric}_target         → Objetivo/meta
-kpi_{metric}_baseline       → Referencia histórica
-kpi_{metric}_variance_pct   → ((current - target) / target) * 100
-kpi_{metric}_status_color   → HEX (#00CC66, #FFBB33, #FF4444, #B0B0B0)
-kpi_{metric}_status_level   → 0=OK, 1=WARNING, 2=CRITICAL, 3=NO_DATA
-kpi_{metric}_severity_label → 'EXCELENTE','NORMAL','ALERTA','CRÍTICO','SIN DATOS'
+{base}_{period}              → Valor del período
+  Períodos: _current (snapshot), _dia (diario), _mes (mensual)
+{base}_target                → Objetivo/meta
+{base}_baseline              → Referencia histórica
+{base}_variance_pct          → ((val - target) / target) * 100
+{base}_status_color          → HEX (#00CC66, #FFBB33, #FF4444, #B0B0B0)
+{base}_status_level          → 0=OK, 1=WARNING, 2=CRITICAL, 3=NO_DATA
+{base}_severity_label        → 'EXCELENTE','NORMAL','ALERTA','CRÍTICO','SIN DATOS'
 
-KPIs INCLUIDOS:
+BASES ESTANDARIZADAS:
 ─────────────────────────────────────
-1. MTBF   (Mean Time Between Failures) – Horas
-2. UPTIME (Disponibilidad)             – Porcentaje
-3. KWH_BBL(Eficiencia Energética)      – kWh/barril
-4. VOL_EFF(Eficiencia Volumétrica)     – Porcentaje
-5. AI_ACCURACY (Precisión IA)          – Porcentaje
+1. kpi_mtbf_hrs   (Mean Time Between Failures – Horas)
+   + kpi_mtbf_days (= hrs/24, conversión para períodos largos)
+2. kpi_uptime_pct (Disponibilidad – Porcentaje)
+3. kpi_kwh_bbl    (Eficiencia Energética – kWh/barril)
+4. kpi_vol_eff_pct(Eficiencia Volumétrica – Porcentaje)
+5. ai_accuracy    (Precisión IA – Porcentaje)
 
 DISEÑO WIDE (1 fila = 1 fecha × 1 pozo):
 ─────────────────────────────────────
@@ -35,6 +35,12 @@ DISEÑO WIDE (1 fila = 1 fecha × 1 pozo):
   Semáforos en fila de hoy = copiados de dataset_current_values.
   Semáforos en filas históricas = computados sobre _dia vs target.
   Horario: NO semáforos, solo raw KPIs en fact_operaciones_horarias.
+
+COLUMNAS DESCARTADAS (simplificación):
+─────────────────────────────────────
+  fail_count, tiempo_operacion_hrs, tiempo_paro_hrs,
+  costo_energia_usd, lifting_cost_usd_bbl,
+  eur_remanente_bbl, produccion_acumulada_bbl, vida_util_estimada_dias
 ================================================================================
 */
 
@@ -78,37 +84,34 @@ CREATE TABLE reporting.dataset_kpi_business (
     region VARCHAR(50),
 
     -- ═══════════════════════════════════════════════════════════════════════
-    -- KPI 1: MTBF (Mean Time Between Failures) – Horas
+    -- KPI 1: MTBF (Mean Time Between Failures) – kpi_mtbf_hrs / kpi_mtbf_days
     -- ═══════════════════════════════════════════════════════════════════════
-    kpi_mtbf_current DECIMAL(10,2),          -- Snapshot (dataset_current_values)
-    kpi_mtbf_dia DECIMAL(10,2),              -- Agregado diario
-    kpi_mtbf_mes DECIMAL(10,2),              -- Agregado mensual
-    kpi_mtbf_target DECIMAL(10,2),           -- Objetivo
-    kpi_mtbf_baseline DECIMAL(10,2),         -- Referencia histórica
-    kpi_mtbf_variance_pct DECIMAL(8,2),      -- ((val-target)/target)*100
-    kpi_mtbf_status_color VARCHAR(7),        -- Semáforo color
-    kpi_mtbf_status_level INTEGER,           -- 0=OK,1=WARN,2=CRIT,3=NO_DATA
-    kpi_mtbf_severity_label VARCHAR(20),     -- EXCELENTE/NORMAL/ALERTA/CRÍTICO
-    kpi_mtbf_dias DECIMAL(10,2),             -- mtbf / 24 (legacy)
-    fail_count INTEGER,                      -- Número de fallas en el período
+    kpi_mtbf_hrs_current DECIMAL(10,2),      -- Snapshot (dataset_current_values)
+    kpi_mtbf_hrs_dia DECIMAL(10,2),          -- Agregado diario
+    kpi_mtbf_hrs_mes DECIMAL(10,2),          -- Agregado mensual
+    kpi_mtbf_hrs_target DECIMAL(10,2),       -- Objetivo
+    kpi_mtbf_hrs_baseline DECIMAL(10,2),     -- Referencia histórica
+    kpi_mtbf_hrs_variance_pct DECIMAL(8,2),  -- ((val-target)/target)*100
+    kpi_mtbf_hrs_status_color VARCHAR(7),    -- Semáforo color
+    kpi_mtbf_hrs_status_level INTEGER,       -- 0=OK,1=WARN,2=CRIT,3=NO_DATA
+    kpi_mtbf_hrs_severity_label VARCHAR(20), -- EXCELENTE/NORMAL/ALERTA/CRÍTICO
+    kpi_mtbf_days DECIMAL(10,2),             -- = kpi_mtbf_hrs / 24
 
     -- ═══════════════════════════════════════════════════════════════════════
-    -- KPI 2: UPTIME (Disponibilidad) – Porcentaje
+    -- KPI 2: UPTIME (Disponibilidad) – kpi_uptime_pct
     -- ═══════════════════════════════════════════════════════════════════════
-    kpi_uptime_current DECIMAL(5,2),
-    kpi_uptime_dia DECIMAL(5,2),
-    kpi_uptime_mes DECIMAL(5,2),
-    kpi_uptime_target DECIMAL(5,2),
-    kpi_uptime_baseline DECIMAL(5,2),
-    kpi_uptime_variance_pct DECIMAL(8,2),
-    kpi_uptime_status_color VARCHAR(7),
-    kpi_uptime_status_level INTEGER,
-    kpi_uptime_severity_label VARCHAR(20),
-    tiempo_operacion_hrs DECIMAL(10,2),
-    tiempo_paro_hrs DECIMAL(10,2),
+    kpi_uptime_pct_current DECIMAL(5,2),
+    kpi_uptime_pct_dia DECIMAL(5,2),
+    kpi_uptime_pct_mes DECIMAL(5,2),
+    kpi_uptime_pct_target DECIMAL(5,2),
+    kpi_uptime_pct_baseline DECIMAL(5,2),
+    kpi_uptime_pct_variance_pct DECIMAL(8,2),
+    kpi_uptime_pct_status_color VARCHAR(7),
+    kpi_uptime_pct_status_level INTEGER,
+    kpi_uptime_pct_severity_label VARCHAR(20),
 
     -- ═══════════════════════════════════════════════════════════════════════
-    -- KPI 3: KWH_BBL (Eficiencia Energética) – kWh/barril
+    -- KPI 3: KWH_BBL (Eficiencia Energética) – kpi_kwh_bbl
     -- ═══════════════════════════════════════════════════════════════════════
     kpi_kwh_bbl_current DECIMAL(10,4),
     kpi_kwh_bbl_dia DECIMAL(10,4),
@@ -120,43 +123,38 @@ CREATE TABLE reporting.dataset_kpi_business (
     kpi_kwh_bbl_status_level INTEGER,
     kpi_kwh_bbl_severity_label VARCHAR(20),
     consumo_kwh DECIMAL(10,2),
-    costo_energia_usd DECIMAL(10,2),
 
     -- ═══════════════════════════════════════════════════════════════════════
-    -- KPI 4: VOL_EFF (Eficiencia Volumétrica) – Porcentaje
+    -- KPI 4: VOL_EFF (Eficiencia Volumétrica) – kpi_vol_eff_pct
     -- ═══════════════════════════════════════════════════════════════════════
-    kpi_vol_eff_current DECIMAL(5,2),
-    kpi_vol_eff_dia DECIMAL(5,2),
-    kpi_vol_eff_mes DECIMAL(5,2),
-    kpi_vol_eff_target DECIMAL(5,2),
-    kpi_vol_eff_baseline DECIMAL(5,2),
-    kpi_vol_eff_variance_pct DECIMAL(8,2),
-    kpi_vol_eff_status_color VARCHAR(7),
-    kpi_vol_eff_status_level INTEGER,
-    kpi_vol_eff_severity_label VARCHAR(20),
+    kpi_vol_eff_pct_current DECIMAL(5,2),
+    kpi_vol_eff_pct_dia DECIMAL(5,2),
+    kpi_vol_eff_pct_mes DECIMAL(5,2),
+    kpi_vol_eff_pct_target DECIMAL(5,2),
+    kpi_vol_eff_pct_baseline DECIMAL(5,2),
+    kpi_vol_eff_pct_variance_pct DECIMAL(8,2),
+    kpi_vol_eff_pct_status_color VARCHAR(7),
+    kpi_vol_eff_pct_status_level INTEGER,
+    kpi_vol_eff_pct_severity_label VARCHAR(20),
     produccion_real_bbl DECIMAL(10,2),
     produccion_teorica_bbl DECIMAL(10,2),
 
     -- ═══════════════════════════════════════════════════════════════════════
-    -- KPI 5: AI_ACCURACY (Precisión IA) – Porcentaje
+    -- KPI 5: AI_ACCURACY (Precisión IA) – ai_accuracy
     -- ═══════════════════════════════════════════════════════════════════════
-    kpi_ai_accuracy_current DECIMAL(5,2),
-    kpi_ai_accuracy_dia DECIMAL(5,2),
-    kpi_ai_accuracy_mes DECIMAL(5,2),
-    kpi_ai_accuracy_target DECIMAL(5,2),
-    kpi_ai_accuracy_baseline DECIMAL(5,2),
-    kpi_ai_accuracy_variance_pct DECIMAL(8,2),
-    kpi_ai_accuracy_status_color VARCHAR(7),
-    kpi_ai_accuracy_status_level INTEGER,
-    kpi_ai_accuracy_severity_label VARCHAR(20),
+    ai_accuracy_current DECIMAL(5,2),
+    ai_accuracy_dia DECIMAL(5,2),
+    ai_accuracy_mes DECIMAL(5,2),
+    ai_accuracy_target DECIMAL(5,2),
+    ai_accuracy_baseline DECIMAL(5,2),
+    ai_accuracy_variance_pct DECIMAL(8,2),
+    ai_accuracy_status_color VARCHAR(7),
+    ai_accuracy_status_level INTEGER,
+    ai_accuracy_severity_label VARCHAR(20),
 
     -- ═══════════════════════════════════════════════════════════════════════
-    -- CONTEXTO ADICIONAL
+    -- CONTEXTO
     -- ═══════════════════════════════════════════════════════════════════════
-    eur_remanente_bbl DECIMAL(15,2),
-    produccion_acumulada_bbl DECIMAL(15,2),
-    vida_util_estimada_dias INTEGER,
-    lifting_cost_usd_bbl DECIMAL(10,2),
     calidad_datos_pct DECIMAL(5,2),
     fecha_calculo TIMESTAMP DEFAULT NOW(),
 
@@ -253,7 +251,7 @@ VALUES ('DEFAULT', 'region', 'PECOS VALLEY', 'Región default para pozos sin reg
 ON CONFLICT (kpi_nombre, parametro) DO NOTHING;
 
 -- =============================================================================
--- 4. STORED PROCEDURE: POBLAR dataset_kpi_business (WIDE – 4 pasos)
+-- 4. STORED PROCEDURE: POBLAR dataset_kpi_business (WIDE – 3 pasos)
 -- =============================================================================
 CREATE OR REPLACE PROCEDURE reporting.poblar_kpi_business(
     p_fecha_inicio DATE DEFAULT CURRENT_DATE - 30,
@@ -360,20 +358,19 @@ BEGIN
     -- En el futuro podrán anexarse a esta tabla si el dashboard lo requiere.
     INSERT INTO reporting.dataset_kpi_business (
         fecha, well_id, nombre_pozo, campo, region,
-        -- MTBF (solo raw + targets)
-        kpi_mtbf_dia, kpi_mtbf_target, kpi_mtbf_baseline,
-        kpi_mtbf_dias, fail_count,
-        -- UPTIME (solo raw + targets)
-        kpi_uptime_dia, kpi_uptime_target, kpi_uptime_baseline,
-        tiempo_operacion_hrs, tiempo_paro_hrs,
-        -- KWH_BBL (solo raw + targets)
+        -- MTBF (raw + targets)
+        kpi_mtbf_hrs_dia, kpi_mtbf_hrs_target, kpi_mtbf_hrs_baseline,
+        kpi_mtbf_days,
+        -- UPTIME (raw + targets)
+        kpi_uptime_pct_dia, kpi_uptime_pct_target, kpi_uptime_pct_baseline,
+        -- KWH_BBL (raw + targets)
         kpi_kwh_bbl_dia, kpi_kwh_bbl_target, kpi_kwh_bbl_baseline,
-        consumo_kwh, costo_energia_usd,
-        -- VOL_EFF (solo raw + targets)
-        kpi_vol_eff_dia, kpi_vol_eff_target, kpi_vol_eff_baseline,
+        consumo_kwh,
+        -- VOL_EFF (raw + targets)
+        kpi_vol_eff_pct_dia, kpi_vol_eff_pct_target, kpi_vol_eff_pct_baseline,
         produccion_real_bbl, produccion_teorica_bbl,
         -- AI_ACCURACY defaults
-        kpi_ai_accuracy_target, kpi_ai_accuracy_baseline,
+        ai_accuracy_target, ai_accuracy_baseline,
         -- Context
         calidad_datos_pct
     )
@@ -389,21 +386,17 @@ BEGIN
         r.mtbf_tgt,
         r.mtbf_bsl,
         CASE WHEN r.mtbf_raw IS NOT NULL THEN r.mtbf_raw / 24.0 ELSE NULL END,
-        r.numero_fallas,
 
         -- ── UPTIME (raw + targets, SIN semáforos) ──
         r.uptime_raw,
         r.uptime_tgt,
         r.uptime_bsl,
-        r.tiempo_operacion_hrs,
-        r.tiempo_paro_noprog_hrs,
 
         -- ── KWH/BBL (raw + targets, SIN semáforos) ──
         r.kwh_bbl_raw,
         r.kwh_tgt,
         r.kwh_bsl,
         r.consumo_energia_kwh,
-        ROUND(r.consumo_energia_kwh * v_tarifa_kwh, 2),
 
         -- ── VOL EFF (raw + targets, SIN semáforos) ──
         r.vol_eff_raw,
@@ -422,33 +415,29 @@ BEGIN
     FROM diario_raw r
     ON CONFLICT (fecha, well_id)
     DO UPDATE SET
-        nombre_pozo            = EXCLUDED.nombre_pozo,
-        campo                  = EXCLUDED.campo,
-        region                 = EXCLUDED.region,
-        kpi_mtbf_dia           = EXCLUDED.kpi_mtbf_dia,
-        kpi_mtbf_target        = EXCLUDED.kpi_mtbf_target,
-        kpi_mtbf_baseline      = EXCLUDED.kpi_mtbf_baseline,
-        kpi_mtbf_dias          = EXCLUDED.kpi_mtbf_dias,
-        fail_count             = EXCLUDED.fail_count,
-        kpi_uptime_dia         = EXCLUDED.kpi_uptime_dia,
-        kpi_uptime_target      = EXCLUDED.kpi_uptime_target,
-        kpi_uptime_baseline    = EXCLUDED.kpi_uptime_baseline,
-        tiempo_operacion_hrs   = EXCLUDED.tiempo_operacion_hrs,
-        tiempo_paro_hrs        = EXCLUDED.tiempo_paro_hrs,
-        kpi_kwh_bbl_dia        = EXCLUDED.kpi_kwh_bbl_dia,
-        kpi_kwh_bbl_target     = EXCLUDED.kpi_kwh_bbl_target,
-        kpi_kwh_bbl_baseline   = EXCLUDED.kpi_kwh_bbl_baseline,
-        consumo_kwh            = EXCLUDED.consumo_kwh,
-        costo_energia_usd      = EXCLUDED.costo_energia_usd,
-        kpi_vol_eff_dia        = EXCLUDED.kpi_vol_eff_dia,
-        kpi_vol_eff_target     = EXCLUDED.kpi_vol_eff_target,
-        kpi_vol_eff_baseline   = EXCLUDED.kpi_vol_eff_baseline,
-        produccion_real_bbl    = EXCLUDED.produccion_real_bbl,
-        produccion_teorica_bbl = EXCLUDED.produccion_teorica_bbl,
-        kpi_ai_accuracy_target = EXCLUDED.kpi_ai_accuracy_target,
-        kpi_ai_accuracy_baseline = EXCLUDED.kpi_ai_accuracy_baseline,
-        calidad_datos_pct      = EXCLUDED.calidad_datos_pct,
-        fecha_calculo          = NOW();
+        nombre_pozo                  = EXCLUDED.nombre_pozo,
+        campo                        = EXCLUDED.campo,
+        region                       = EXCLUDED.region,
+        kpi_mtbf_hrs_dia             = EXCLUDED.kpi_mtbf_hrs_dia,
+        kpi_mtbf_hrs_target          = EXCLUDED.kpi_mtbf_hrs_target,
+        kpi_mtbf_hrs_baseline        = EXCLUDED.kpi_mtbf_hrs_baseline,
+        kpi_mtbf_days                = EXCLUDED.kpi_mtbf_days,
+        kpi_uptime_pct_dia           = EXCLUDED.kpi_uptime_pct_dia,
+        kpi_uptime_pct_target        = EXCLUDED.kpi_uptime_pct_target,
+        kpi_uptime_pct_baseline      = EXCLUDED.kpi_uptime_pct_baseline,
+        kpi_kwh_bbl_dia              = EXCLUDED.kpi_kwh_bbl_dia,
+        kpi_kwh_bbl_target           = EXCLUDED.kpi_kwh_bbl_target,
+        kpi_kwh_bbl_baseline         = EXCLUDED.kpi_kwh_bbl_baseline,
+        consumo_kwh                  = EXCLUDED.consumo_kwh,
+        kpi_vol_eff_pct_dia          = EXCLUDED.kpi_vol_eff_pct_dia,
+        kpi_vol_eff_pct_target       = EXCLUDED.kpi_vol_eff_pct_target,
+        kpi_vol_eff_pct_baseline     = EXCLUDED.kpi_vol_eff_pct_baseline,
+        produccion_real_bbl          = EXCLUDED.produccion_real_bbl,
+        produccion_teorica_bbl       = EXCLUDED.produccion_teorica_bbl,
+        ai_accuracy_target           = EXCLUDED.ai_accuracy_target,
+        ai_accuracy_baseline         = EXCLUDED.ai_accuracy_baseline,
+        calidad_datos_pct            = EXCLUDED.calidad_datos_pct,
+        fecha_calculo                = NOW();
 
     -- =====================================================================
     -- PASO B: UPDATE MENSUAL (fact_operaciones_mensuales → kpi_*_mes)
@@ -456,15 +445,14 @@ BEGIN
     -- =====================================================================
     UPDATE reporting.dataset_kpi_business kb
     SET
-        kpi_mtbf_mes = CASE
+        kpi_mtbf_hrs_mes = CASE
             WHEN m.total_fallas_mes > 0 THEN m.tiempo_operacion_hrs / m.total_fallas_mes
             WHEN m.tiempo_operacion_hrs > 0 THEN m.tiempo_operacion_hrs
             ELSE NULL
         END,
-        kpi_uptime_mes = m.eficiencia_uptime_pct,
+        kpi_uptime_pct_mes = m.eficiencia_uptime_pct,
         kpi_kwh_bbl_mes = m.kpi_kwh_bbl_mes,
-        kpi_vol_eff_mes = m.promedio_efic_vol_pct,
-        produccion_acumulada_bbl = m.produccion_petroleo_acumulada_bbl,
+        kpi_vol_eff_pct_mes = m.promedio_efic_vol_pct,
         fecha_calculo = NOW()
     FROM reporting.fact_operaciones_mensuales m
     WHERE kb.well_id = m.pozo_id
@@ -481,11 +469,11 @@ BEGIN
     -- C.1  Garantizar que existe fila para hoy por cada pozo activo
     INSERT INTO reporting.dataset_kpi_business (
         fecha, well_id, nombre_pozo, campo, region,
-        kpi_mtbf_target, kpi_mtbf_baseline,
-        kpi_uptime_target, kpi_uptime_baseline,
+        kpi_mtbf_hrs_target, kpi_mtbf_hrs_baseline,
+        kpi_uptime_pct_target, kpi_uptime_pct_baseline,
         kpi_kwh_bbl_target, kpi_kwh_bbl_baseline,
-        kpi_vol_eff_target, kpi_vol_eff_baseline,
-        kpi_ai_accuracy_target, kpi_ai_accuracy_baseline
+        kpi_vol_eff_pct_target, kpi_vol_eff_pct_baseline,
+        ai_accuracy_target, ai_accuracy_baseline
     )
     SELECT
         CURRENT_DATE,
@@ -512,31 +500,31 @@ BEGIN
     UPDATE reporting.dataset_kpi_business kb
     SET
         -- Valores current
-        kpi_mtbf_current    = c.kpi_mtbf_hrs_act,
-        kpi_uptime_current  = c.kpi_uptime_pct_act,
-        kpi_kwh_bbl_current = c.kpi_kwh_bbl_act,
-        kpi_vol_eff_current = c.kpi_vol_eff_pct_act,
-        kpi_ai_accuracy_current = c.ai_accuracy_act,
+        kpi_mtbf_hrs_current     = c.kpi_mtbf_hrs_act,
+        kpi_uptime_pct_current   = c.kpi_uptime_pct_act,
+        kpi_kwh_bbl_current      = c.kpi_kwh_bbl_act,
+        kpi_vol_eff_pct_current  = c.kpi_vol_eff_pct_act,
+        ai_accuracy_current      = c.ai_accuracy_act,
 
-        -- MTBF días (legacy)
-        kpi_mtbf_dias = CASE WHEN c.kpi_mtbf_hrs_act IS NOT NULL
+        -- MTBF days (= hrs / 24)
+        kpi_mtbf_days = CASE WHEN c.kpi_mtbf_hrs_act IS NOT NULL
                              THEN c.kpi_mtbf_hrs_act / 24.0 ELSE NULL END,
 
         -- Semáforos MTBF (copiados)
-        kpi_mtbf_variance_pct   = c.mtbf_variance_pct,
-        kpi_mtbf_status_color   = c.mtbf_status_color,
-        kpi_mtbf_status_level   = c.mtbf_status_level,
-        kpi_mtbf_severity_label = c.mtbf_severity_label,
+        kpi_mtbf_hrs_variance_pct   = c.mtbf_variance_pct,
+        kpi_mtbf_hrs_status_color   = c.mtbf_status_color,
+        kpi_mtbf_hrs_status_level   = c.mtbf_status_level,
+        kpi_mtbf_hrs_severity_label = c.mtbf_severity_label,
 
         -- Semáforos UPTIME (copiados + variance calculada)
-        kpi_uptime_variance_pct = CASE
+        kpi_uptime_pct_variance_pct = CASE
             WHEN COALESCE(p.kpi_uptime_pct_target, v_uptime_target) > 0 THEN
                 ROUND((c.kpi_uptime_pct_act - COALESCE(p.kpi_uptime_pct_target, v_uptime_target))
                       / COALESCE(p.kpi_uptime_pct_target, v_uptime_target) * 100, 2)
             ELSE NULL END,
-        kpi_uptime_status_color   = c.kpi_uptime_pct_status_color,
-        kpi_uptime_status_level   = c.kpi_uptime_pct_status_level,
-        kpi_uptime_severity_label = c.kpi_uptime_pct_severity_label,
+        kpi_uptime_pct_status_color   = c.kpi_uptime_pct_status_color,
+        kpi_uptime_pct_status_level   = c.kpi_uptime_pct_status_level,
+        kpi_uptime_pct_severity_label = c.kpi_uptime_pct_severity_label,
 
         -- Semáforos KWH_BBL (copiados + variance calculada — MENOR es mejor → invertida)
         kpi_kwh_bbl_variance_pct = CASE
@@ -549,65 +537,30 @@ BEGIN
         kpi_kwh_bbl_severity_label = c.kpi_kwh_bbl_severity_label,
 
         -- Semáforos VOL_EFF (copiados + variance calculada)
-        kpi_vol_eff_variance_pct = CASE
+        kpi_vol_eff_pct_variance_pct = CASE
             WHEN COALESCE(p.vol_eff_target, v_vol_eff_target) > 0 THEN
                 ROUND((c.kpi_vol_eff_pct_act - COALESCE(p.vol_eff_target, v_vol_eff_target))
                       / COALESCE(p.vol_eff_target, v_vol_eff_target) * 100, 2)
             ELSE NULL END,
-        kpi_vol_eff_status_color   = c.vol_eff_status_color,
-        kpi_vol_eff_status_level   = c.vol_eff_status_level,
-        kpi_vol_eff_severity_label = c.vol_eff_severity_label,
+        kpi_vol_eff_pct_status_color   = c.vol_eff_status_color,
+        kpi_vol_eff_pct_status_level   = c.vol_eff_status_level,
+        kpi_vol_eff_pct_severity_label = c.vol_eff_severity_label,
 
         -- Semáforos AI_ACCURACY (copiados + variance calculada)
-        kpi_ai_accuracy_variance_pct = CASE
+        ai_accuracy_variance_pct = CASE
             WHEN v_ai_accuracy_target > 0 AND c.ai_accuracy_act IS NOT NULL THEN
                 ROUND((c.ai_accuracy_act - v_ai_accuracy_target)
                       / v_ai_accuracy_target * 100, 2)
             ELSE NULL END,
-        kpi_ai_accuracy_status_color   = c.ai_accuracy_status_color,
-        kpi_ai_accuracy_status_level   = c.ai_accuracy_status_level,
-        kpi_ai_accuracy_severity_label = c.ai_accuracy_severity_label,
+        ai_accuracy_status_color   = c.ai_accuracy_status_color,
+        ai_accuracy_status_level   = c.ai_accuracy_status_level,
+        ai_accuracy_severity_label = c.ai_accuracy_severity_label,
 
         fecha_calculo = NOW()
     FROM reporting.dataset_current_values c
     JOIN reporting.dim_pozo p ON c.well_id = p.pozo_id
     WHERE kb.well_id = c.well_id
       AND kb.fecha BETWEEN p_fecha_inicio AND p_fecha_fin;
-
-    -- =====================================================================
-    -- PASO D: RESERVAS Y VIDA ÚTIL (todas las filas del rango)
-    -- =====================================================================
-    -- LÓGICA DUAL:
-    --   DEFAULT: RR = Total.Reserves (reserva_inicial_teorica) - Np (acumulada)
-    --   ARPS:    Si existe eur_total de universal.arps_resultados_declinacion,
-    --            sustituye Total.Reserves por eur_total (dinámico, mensual EventBridge)
-    --
-    -- Prioridad: ARPS eur_total > reserva_inicial_teorica (estático)
-    -- vida_util = RR / produccion_real_bbl (días)
-    -- =====================================================================
-    UPDATE reporting.dataset_kpi_business b
-    SET
-        eur_remanente_bbl = COALESCE(arps.eur_total, r.reserva_inicial_teorica)
-                            - COALESCE(b.produccion_acumulada_bbl, 0),
-        vida_util_estimada_dias = CASE
-            WHEN b.produccion_real_bbl > 0 THEN
-                ROUND(
-                    (COALESCE(arps.eur_total, r.reserva_inicial_teorica)
-                     - COALESCE(b.produccion_acumulada_bbl, 0))
-                    / b.produccion_real_bbl
-                )::INTEGER
-            ELSE NULL
-        END
-    FROM stage.tbl_pozo_reservas r
-    LEFT JOIN LATERAL (
-        SELECT a.eur_total
-        FROM universal.arps_resultados_declinacion a
-        WHERE a.well_id = b.well_id
-        ORDER BY a.fecha_analisis DESC
-        LIMIT 1
-    ) arps ON true
-    WHERE b.well_id = r.well_id
-      AND b.fecha BETWEEN p_fecha_inicio AND p_fecha_fin;
 
     RAISE NOTICE 'KPIs Business WIDE actualizados para % a % (DIARIO + MENSUAL + CURRENT)',
                  p_fecha_inicio, p_fecha_fin;
@@ -655,12 +608,21 @@ $$;
 COMMENT ON TABLE reporting.dataset_kpi_business IS
 'Tabla WIDE consolidada de KPIs para dashboards de BI.
 Diseño: 1 fila = 1 fecha × 1 pozo (PK: fecha, well_id).
-Períodos en columnas: kpi_{metric}_current, kpi_{metric}_dia, kpi_{metric}_mes.
-KPIs: MTBF, Uptime, kWh/bbl, Vol Eff, AI Accuracy.
-Derivados por KPI: target, baseline + valores raw por período.
+Períodos en columnas: {base}_current, {base}_dia, {base}_mes.
 
-SEMÁFOROS (variance_pct, status_color, status_level, severity_label):
-  - Se pueblan para TODAS las filas del rango, copiados de dataset_current_values.
-  - Los semáforos de diario/mensual también residen en fact_operaciones_diarias/mensuales.
+NOMENCLATURA ESTANDARIZADA:
+  kpi_mtbf_hrs   — Mean Time Between Failures (horas)
+  kpi_mtbf_days  — Conversión MTBF a días (= hrs/24)
+  kpi_uptime_pct — Disponibilidad (%)
+  kpi_kwh_bbl    — Eficiencia Energética (kWh/barril)
+  kpi_vol_eff_pct — Eficiencia Volumétrica (%)
+  ai_accuracy    — Precisión IA (%)
+
+Derivados por KPI: _target, _baseline, _variance_pct, _status_color, _status_level, _severity_label.
+
+SP: reporting.poblar_kpi_business(fecha_inicio, fecha_fin)
+   PASO A: fact_diarias → _dia + targets/baselines
+   PASO B: fact_mensuales → _mes
+   PASO C: current_values → _current + semáforos
 
 Horario: NO incluido, consultar fact_operaciones_horarias directamente.';

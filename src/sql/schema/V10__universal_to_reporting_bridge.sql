@@ -13,7 +13,7 @@
 --   2. sp_sync_ipr_to_reporting()  — IPR curvas     → dataset_current_values
 --                                    IPR op.point  → ipr_eficiencia_flujo_pct
 --                                                  + fact_operaciones_horarias
---   3. sp_sync_arps_to_reporting() — ARPS decline   → dataset_kpi_business
+--   3. sp_sync_arps_to_reporting() — ARPS decline   → fact_operaciones_mensuales
 --
 -- FLUJO DE DATOS:
 -- ┌─────────────────────────────────────────────────────────────────────┐
@@ -29,7 +29,7 @@
 -- │        └────────────────────┘                                      │
 -- │                                                                    │
 -- │  universal.arps_resultados  ──→ sp_sync_arps_to_reporting()        │
--- │        │                    ┌─→ reporting.dataset_kpi_business      │
+-- │        │                    ┌─→ reporting.fact_operaciones_mensuales │
 -- │        └────────────────────┘                                      │
 -- └─────────────────────────────────────────────────────────────────────┘
 --
@@ -37,7 +37,7 @@
 --   • universal schema V2  (patron, stroke, diagnostico, ipr_resultados,
 --                           ipr_puntos_operacion, arps_resultados_declinacion)
 --   • reporting schema V4  (dataset_current_values,
---                           fact_operaciones_horarias, dataset_kpi_business)
+--                           fact_operaciones_horarias, fact_operaciones_mensuales)
 --   • referencial.fnc_evaluar_variable()  (V7 — clasificación semáforo)
 --
 -- INVOCACIÓN:
@@ -52,12 +52,10 @@
 --     ai_accuracy_act, ai_accuracy_status_*, ai_accuracy_severity_label,
 --     ai_accuracy_target, ai_accuracy_variance_pct,
 --     ipr_qmax_bpd, ipr_eficiencia_flujo_pct
---   dataset_latest_dynacard:
---     diagnostico_ia, superficie_json, fondo_json, carga_min/max_superficie
 --   fact_operaciones_horarias:
 --     ipr_qmax_teorico, kpi_ai_accuracy_pct, kpi_ai_accuracy_status_*
---   dataset_kpi_business:
---     eur_remanente_bbl, kpi_ai_accuracy_*
+--   fact_operaciones_mensuales:
+--     remanent_reserves_bbl
 -- =============================================================================
 
 
@@ -352,55 +350,24 @@ COMMENT ON PROCEDURE reporting.sp_sync_ipr_to_reporting() IS
 -- =============================================================================
 -- SP 3: ARPS → REPORTING
 -- =============================================================================
--- Sincroniza declinación hacia eur_remanente_bbl en dataset_kpi_business
--- y remanent_reserves_bbl en fact_operaciones_mensuales.
+-- Sincroniza declinación hacia remanent_reserves_bbl en fact_operaciones_mensuales.
 --
--- LÓGICA DUAL DE RESERVAS REMANENTES:
---   DEFAULT (V7 poblar_kpi_business): RR = Total.Res - Np
---   ARPS (este SP, mensual EventBridge): RR = eur_total - Np
---     → sustituye Total.Res por eur_total dinámicamente
+-- NOTA: eur_remanente_bbl y vida_util_estimada_dias fueron removidos de
+--       dataset_kpi_business en la estandarización V7. El ARPS bridge ahora
+--       solo actualiza fact_mensuales.
 --
 -- FLUJO EventBridge:
 --   Rule (mensual): Declinación Service → universal.arps_resultados_declinacion
---     → CALL sp_sync_arps_to_reporting() (refresca RR con ARPS)
---   Rule (diario):  V7 poblar_kpi_business ya calcula RR con COALESCE(arps, total_res)
+--     → CALL sp_sync_arps_to_reporting() (refresca RR en mensuales)
 --
--- Prioridad: eur_p50 > eur_total > reserva_inicial_teorica (fallback)
+-- Prioridad: eur_p50 > eur_total
 -- =============================================================================
 
 CREATE OR REPLACE PROCEDURE reporting.sp_sync_arps_to_reporting()
 LANGUAGE plpgsql AS $$
 BEGIN
     -- ─────────────────────────────────────────────────────────────
-    -- PASO 1: dataset_kpi_business — EUR remanente = ARPS - Np
-    -- ─────────────────────────────────────────────────────────────
-    WITH latest_arps AS (
-        SELECT DISTINCT ON (well_id)
-            well_id,
-            eur_total,
-            eur_p50,
-            fecha_analisis
-        FROM universal.arps_resultados_declinacion
-        ORDER BY well_id, fecha_analisis DESC
-    )
-    UPDATE reporting.dataset_kpi_business dkb
-    SET
-        eur_remanente_bbl = COALESCE(la.eur_p50, la.eur_total)
-                            - COALESCE(dkb.produccion_acumulada_bbl, 0),
-        vida_util_estimada_dias = CASE
-            WHEN dkb.produccion_real_bbl > 0 THEN
-                ROUND(
-                    (COALESCE(la.eur_p50, la.eur_total)
-                     - COALESCE(dkb.produccion_acumulada_bbl, 0))
-                    / dkb.produccion_real_bbl
-                )::INTEGER
-            ELSE NULL
-        END
-    FROM latest_arps la
-    WHERE dkb.well_id = la.well_id;
-
-    -- ─────────────────────────────────────────────────────────────
-    -- PASO 2: fact_operaciones_mensuales — remanent_reserves_bbl
+    -- fact_operaciones_mensuales — remanent_reserves_bbl
     -- ─────────────────────────────────────────────────────────────
     WITH latest_arps AS (
         SELECT DISTINCT ON (well_id)
@@ -418,9 +385,9 @@ BEGIN
     FROM latest_arps la
     WHERE fom.pozo_id = la.well_id;
 
-    RAISE NOTICE '[ARPS→REPORTING] Sincronización completada (kpi_business + mensuales).';
+    RAISE NOTICE '[ARPS→REPORTING] Sincronización completada (fact_mensuales).';
 END;
 $$;
 
 COMMENT ON PROCEDURE reporting.sp_sync_arps_to_reporting() IS
-'Sincroniza ARPS hacia reporting: eur_remanente_bbl = ARPS(eur_p50|eur_total) - Np en dataset_kpi_business y remanent_reserves_bbl en fact_mensuales. Invocado mensualmente por EventBridge.';
+'Sincroniza ARPS hacia reporting: remanent_reserves_bbl = ARPS(eur_p50|eur_total) - Np en fact_mensuales. Invocado mensualmente por EventBridge.';

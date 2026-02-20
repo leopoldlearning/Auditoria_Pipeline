@@ -531,36 +531,32 @@ BEGIN
 
     -- =========================================================================
     -- B. dataset_kpi_business: region, targets, baselines (desde config)
-    --    COLUMNAS V7 WIDE: prefijo kpi_ en métricas
+    --    COLUMNAS V7 WIDE: nomenclatura estandarizada
     -- =========================================================================
     UPDATE reporting.dataset_kpi_business kb
     SET 
         region             = COALESCE(kb.region,
             (SELECT cv.region FROM reporting.dataset_current_values cv 
              WHERE cv.well_id = kb.well_id LIMIT 1), v_default_region),
-        -- KPI targets & baselines (V7: prefijo kpi_)
-        kpi_mtbf_target        = COALESCE(kb.kpi_mtbf_target, v_mtbf_target),
-        kpi_mtbf_baseline      = COALESCE(kb.kpi_mtbf_baseline, v_mtbf_baseline),
-        kpi_uptime_target      = COALESCE(kb.kpi_uptime_target, v_uptime_target),
-        kpi_uptime_baseline    = COALESCE(kb.kpi_uptime_baseline, v_uptime_baseline),
-        kpi_kwh_bbl_target     = COALESCE(kb.kpi_kwh_bbl_target, v_kwh_bbl_target),
-        kpi_kwh_bbl_baseline   = COALESCE(kb.kpi_kwh_bbl_baseline, v_kwh_bbl_baseline),
-        kpi_vol_eff_target     = COALESCE(kb.kpi_vol_eff_target, v_vol_eff_target),
-        kpi_vol_eff_baseline   = COALESCE(kb.kpi_vol_eff_baseline, v_vol_eff_baseline),
-        -- AI Accuracy (V7: kpi_ai_accuracy_*)
-        kpi_ai_accuracy_current       = COALESCE(kb.kpi_ai_accuracy_current, 0.00),
-        kpi_ai_accuracy_target        = COALESCE(kb.kpi_ai_accuracy_target, v_ai_target),
-        kpi_ai_accuracy_baseline      = COALESCE(kb.kpi_ai_accuracy_baseline, v_ai_baseline),
-        kpi_ai_accuracy_variance_pct  = COALESCE(kb.kpi_ai_accuracy_variance_pct, -100.00),
-        kpi_ai_accuracy_status_color  = COALESCE(kb.kpi_ai_accuracy_status_color, '#B0B0B0'),
-        kpi_ai_accuracy_status_level  = COALESCE(kb.kpi_ai_accuracy_status_level, 7),
-        kpi_ai_accuracy_severity_label = COALESCE(kb.kpi_ai_accuracy_severity_label, 'Sin Datos'),
-        -- Contexto (sin prefijo kpi_)
-        produccion_acumulada_bbl = COALESCE(kb.produccion_acumulada_bbl, 0.00),
-        lifting_cost_usd_bbl    = COALESCE(kb.lifting_cost_usd_bbl, v_lifting_cost),
-        eur_remanente_bbl       = COALESCE(kb.eur_remanente_bbl, 0.00),
-        vida_util_estimada_dias = COALESCE(kb.vida_util_estimada_dias, 0),
-        calidad_datos_pct       = COALESCE(kb.calidad_datos_pct, 100.00);
+        -- KPI targets & baselines (nomenclatura estandarizada)
+        kpi_mtbf_hrs_target        = COALESCE(kb.kpi_mtbf_hrs_target, v_mtbf_target),
+        kpi_mtbf_hrs_baseline      = COALESCE(kb.kpi_mtbf_hrs_baseline, v_mtbf_baseline),
+        kpi_uptime_pct_target      = COALESCE(kb.kpi_uptime_pct_target, v_uptime_target),
+        kpi_uptime_pct_baseline    = COALESCE(kb.kpi_uptime_pct_baseline, v_uptime_baseline),
+        kpi_kwh_bbl_target         = COALESCE(kb.kpi_kwh_bbl_target, v_kwh_bbl_target),
+        kpi_kwh_bbl_baseline       = COALESCE(kb.kpi_kwh_bbl_baseline, v_kwh_bbl_baseline),
+        kpi_vol_eff_pct_target     = COALESCE(kb.kpi_vol_eff_pct_target, v_vol_eff_target),
+        kpi_vol_eff_pct_baseline   = COALESCE(kb.kpi_vol_eff_pct_baseline, v_vol_eff_baseline),
+        -- AI Accuracy (sin prefijo kpi_)
+        ai_accuracy_current        = COALESCE(kb.ai_accuracy_current, 0.00),
+        ai_accuracy_target         = COALESCE(kb.ai_accuracy_target, v_ai_target),
+        ai_accuracy_baseline       = COALESCE(kb.ai_accuracy_baseline, v_ai_baseline),
+        ai_accuracy_variance_pct   = COALESCE(kb.ai_accuracy_variance_pct, -100.00),
+        ai_accuracy_status_color   = COALESCE(kb.ai_accuracy_status_color, '#B0B0B0'),
+        ai_accuracy_status_level   = COALESCE(kb.ai_accuracy_status_level, 7),
+        ai_accuracy_severity_label = COALESCE(kb.ai_accuracy_severity_label, 'Sin Datos'),
+        -- Contexto
+        calidad_datos_pct          = COALESCE(kb.calidad_datos_pct, 100.00);
 
     RAISE NOTICE '[DEFAULTS] Baselines, targets y placeholders poblados desde tbl_config_kpi.';
 END;
