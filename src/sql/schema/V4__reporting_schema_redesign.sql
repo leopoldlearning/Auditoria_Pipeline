@@ -328,6 +328,9 @@ CREATE TABLE IF NOT EXISTS reporting.fact_operaciones_mensuales (
     prom_produccion_fluido_bbl DECIMAL(12, 2),  -- [V4 NEW] ID 107
     
     -- [V4 NEW] Reservas remanentes (calculado) ID 130
+    -- DEFAULT: RR = Total_Reserves - Np (produccion_petroleo_acumulada)
+    -- MENSUAL EventBridge: sustituye Total_Reserves por eur_total de ARPS
+    -- Vínculo: universal.arps_resultados_declinacion.eur_total (dinámico)
     remanent_reserves_bbl DECIMAL(14, 2),
     
     promedio_spm DECIMAL(5, 2),
@@ -385,6 +388,9 @@ CREATE TABLE IF NOT EXISTS reporting.dataset_current_values (
     pump_discharge_pressure_psi_act DECIMAL(10,2),  -- [V4 RENAMED] Antes: pdp_psi
     
     -- [V4 NEW] Presión de fondo fluyente ID 151
+    -- CALC: Pwf = PIP + 0.433 × (Hf - Hp)
+    -- Independiente de IPR: usa PIP_act + gradiente hidrostático
+    -- Si hay resultado IPR DIA-24h, V10 bridge puede sobreescribir con pwf_actual calculado
     pwf_psi_act DECIMAL(10,2),
     
     spm_actual DECIMAL(5,2),
@@ -440,10 +446,10 @@ CREATE TABLE IF NOT EXISTS reporting.dataset_current_values (
     fluid_level_tvd_ft DECIMAL(10,2),
     
     -- [NUEVO] Cargas y Pesos
-    max_rod_load_lb_act DECIMAL(10,2),
-    min_rod_load_lb_act DECIMAL(10,2),
-    max_pump_load_lb_act DECIMAL(10,2),
-    min_pump_load_lb_act DECIMAL(10,2),
+    max_rod_load_lb_act DECIMAL(10,2),      -- ID:76 directo SCADA
+    min_rod_load_lb_act DECIMAL(10,2),      -- ID:77 directo SCADA
+    max_pump_load_lb_act DECIMAL(10,2),     -- ETL: MAX(downhole_pump_load ID:158/74)
+    min_pump_load_lb_act DECIMAL(10,2),     -- ETL: MIN(downhole_pump_load ID:158/74)
     
     -- [NUEVO] Road Load (Carga Varillas) - Zero Calc
     road_load_pct_act DECIMAL(5,2),
@@ -482,7 +488,7 @@ CREATE TABLE IF NOT EXISTS reporting.dataset_current_values (
     lift_efficiency_severity_label VARCHAR(20),
     
     -- [NUEVO] Diagnósticos Adicionales
-    pump_stroke_length_act DECIMAL(10,2),  -- MANTENER (diferente de current_stroke_length_act_in)
+    pump_stroke_length_act DECIMAL(10,2),  -- ETL: MAX(downhole_pump_position ID:157) carta fondo
     current_stroke_length_act_in DECIMAL(10,2),  -- [V4 NEW] ID 68: Variable calculada
     pump_stroke_length_var_pct DECIMAL(5,2),
     pump_stroke_length_status_color VARCHAR(7),

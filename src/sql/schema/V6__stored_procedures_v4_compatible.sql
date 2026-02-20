@@ -54,8 +54,14 @@ BEGIN
         -- [V6.1] Campos de Carga y Eficiencia (Road Load & Lift Efficiency)
         max_rod_load_lb_act,
         min_rod_load_lb_act,
+        max_pump_load_lb_act,
+        min_pump_load_lb_act,
         road_load_pct_act,
         lift_efficiency_pct_act,
+
+        -- [V6.8] Campos CALCULADOS desde carta dinagráfica de fondo
+        pump_stroke_length_act,
+        pwf_psi_act,
         
         -- [V6.2] Nuevos Mapeos Directos
         kpi_kwh_bbl_act,                 -- ID:71 kwh_por_barril
@@ -116,10 +122,33 @@ BEGIN
         p.produccion_agua_diaria,   -- produccion_agua_diaria_bpd_act
         
         -- [V6.1] Carga y Eficiencia calculados
-        p.maximum_rod_load,         -- max_rod_load_lb_act
-        p.minimum_rod_load,         -- min_rod_load_lb_act
+        p.maximum_rod_load,         -- max_rod_load_lb_act (ID:76 directo SCADA)
+        p.minimum_rod_load,         -- min_rod_load_lb_act (ID:77 directo SCADA)
+        -- max_pump_load_lb_act: MAX del array downhole_pump_load (ID:158/74)
+        (SELECT MAX(v::DECIMAL) FROM unnest(string_to_array(
+            NULLIF(TRIM(p.downhole_pump_load), ''), ',')) AS v
+         WHERE v ~ '^-?[0-9]+(\.[0-9]+)?$'),
+        -- min_pump_load_lb_act: MIN del array downhole_pump_load (ID:158/74)
+        (SELECT MIN(v::DECIMAL) FROM unnest(string_to_array(
+            NULLIF(TRIM(p.downhole_pump_load), ''), ',')) AS v
+         WHERE v ~ '^-?[0-9]+(\.[0-9]+)?$'),
         ROUND((p.maximum_rod_load / NULLIF(m.carga_nominal_unidad, 0)) * 100, 2),  -- road_load_pct_act
         p.eficiencia_levantamiento, -- lift_efficiency_pct_act
+
+        -- [V6.8] pump_stroke_length_act = MAX posición carta fondo (downhole_pump_position)
+        (SELECT MAX(v::DECIMAL) FROM unnest(string_to_array(
+            NULLIF(TRIM(p.downhole_pump_position), ''), ',')) AS v
+         WHERE v ~ '^-?[0-9]+(\.[0-9]+)?$'),
+        -- [V6.8] pwf_psi_act = PIP + gradiente hidrostático × (Hf - Hp) / 144
+        --   Hf = profundidad_vertical_yacimiento, Hp = profundidad_vertical_bomba
+        --   Gradiente ≈ 0.433 psi/ft (agua) ajustado por gravedad API si disponible
+        --   Fórmula: Pwf = PIP + 0.433 × (Hf - Hp) cuando no hay IPR DIA-24h
+        CASE
+            WHEN p.PIP IS NOT NULL AND m.profundidad_vertical_yacimiento IS NOT NULL
+                 AND m.profundidad_vertical_bomba IS NOT NULL
+            THEN ROUND(p.PIP + 0.433 * (m.profundidad_vertical_yacimiento - m.profundidad_vertical_bomba), 2)
+            ELSE NULL
+        END,
         
         -- [V6.2] Nuevos Mapeos Directos
         p.kwh_por_barril,                    -- kpi_kwh_bbl_act
@@ -193,7 +222,13 @@ BEGIN
         -- [V6.1] Carga y Eficiencia
         max_rod_load_lb_act        = EXCLUDED.max_rod_load_lb_act,
         min_rod_load_lb_act        = EXCLUDED.min_rod_load_lb_act,
+        max_pump_load_lb_act       = EXCLUDED.max_pump_load_lb_act,
+        min_pump_load_lb_act       = EXCLUDED.min_pump_load_lb_act,
         road_load_pct_act          = EXCLUDED.road_load_pct_act,
+
+        -- [V6.8] Carta fondo + Pwf
+        pump_stroke_length_act     = EXCLUDED.pump_stroke_length_act,
+        pwf_psi_act                = EXCLUDED.pwf_psi_act,
         
         -- [V6.2] Nuevos Mapeos
         kpi_kwh_bbl_act            = EXCLUDED.kpi_kwh_bbl_act,

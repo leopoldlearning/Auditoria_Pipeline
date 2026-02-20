@@ -247,6 +247,29 @@ BEGIN
     WHERE dcv.well_id = li.well_id;
 
     -- ─────────────────────────────────────────────────────────────
+    -- PASO 1b: dataset_current_values — pwf_psi_act enriquecido
+    --   V6 ya calcula pwf_psi_act = PIP + 0.433*(Hf-Hp) (READ)
+    --   Si existe punto de operación DIA-1h (pwf_calculado, más
+    --   preciso porque usa IP real del modelo), lo sobreescribe.
+    --   Así pwf_psi_act NO depende de ipr_resultados directamente,
+    --   pero se enriquece con el valor CALC si está disponible.
+    -- ─────────────────────────────────────────────────────────────
+    WITH latest_op_pwf AS (
+        SELECT DISTINCT ON (well_id)
+            well_id,
+            pwf_calculado,
+            fecha_calculo
+        FROM universal.ipr_puntos_operacion
+        ORDER BY well_id, fecha_calculo DESC
+    )
+    UPDATE reporting.dataset_current_values dcv
+    SET
+        pwf_psi_act = lop.pwf_calculado
+    FROM latest_op_pwf lop
+    WHERE dcv.well_id = lop.well_id
+      AND lop.pwf_calculado IS NOT NULL;
+
+    -- ─────────────────────────────────────────────────────────────
     -- PASO 2: dataset_current_values — Eficiencia flujo
     --   Prioridad: ipr_puntos_operacion.eficiencia (DIA-1h, horario)
     --   Fallback:  (produccion_fluido_bpd_act / qmax) * 100
@@ -329,18 +352,27 @@ COMMENT ON PROCEDURE reporting.sp_sync_ipr_to_reporting() IS
 -- =============================================================================
 -- SP 3: ARPS → REPORTING
 -- =============================================================================
--- Sincroniza el pronóstico de declinación más reciente hacia dataset_kpi_business.
+-- Sincroniza declinación hacia eur_remanente_bbl en dataset_kpi_business
+-- y remanent_reserves_bbl en fact_operaciones_mensuales.
 --
--- Lógica:
---   1. Para cada pozo, toma el arps_resultados_declinacion más reciente
---   2. Actualiza dataset_kpi_business.eur_remanente_bbl con EUR P50
+-- LÓGICA DUAL DE RESERVAS REMANENTES:
+--   DEFAULT (V7 poblar_kpi_business): RR = Total.Res - Np
+--   ARPS (este SP, mensual EventBridge): RR = eur_total - Np
+--     → sustituye Total.Res por eur_total dinámicamente
+--
+-- FLUJO EventBridge:
+--   Rule (mensual): Declinación Service → universal.arps_resultados_declinacion
+--     → CALL sp_sync_arps_to_reporting() (refresca RR con ARPS)
+--   Rule (diario):  V7 poblar_kpi_business ya calcula RR con COALESCE(arps, total_res)
+--
+-- Prioridad: eur_p50 > eur_total > reserva_inicial_teorica (fallback)
 -- =============================================================================
 
 CREATE OR REPLACE PROCEDURE reporting.sp_sync_arps_to_reporting()
 LANGUAGE plpgsql AS $$
 BEGIN
     -- ─────────────────────────────────────────────────────────────
-    -- dataset_kpi_business — EUR remanente desde ARPS (P50)
+    -- PASO 1: dataset_kpi_business — EUR remanente = ARPS - Np
     -- ─────────────────────────────────────────────────────────────
     WITH latest_arps AS (
         SELECT DISTINCT ON (well_id)
@@ -354,12 +386,41 @@ BEGIN
     UPDATE reporting.dataset_kpi_business dkb
     SET
         eur_remanente_bbl = COALESCE(la.eur_p50, la.eur_total)
+                            - COALESCE(dkb.produccion_acumulada_bbl, 0),
+        vida_util_estimada_dias = CASE
+            WHEN dkb.produccion_real_bbl > 0 THEN
+                ROUND(
+                    (COALESCE(la.eur_p50, la.eur_total)
+                     - COALESCE(dkb.produccion_acumulada_bbl, 0))
+                    / dkb.produccion_real_bbl
+                )::INTEGER
+            ELSE NULL
+        END
     FROM latest_arps la
     WHERE dkb.well_id = la.well_id;
 
-    RAISE NOTICE '[ARPS→REPORTING] Sincronización completada.';
+    -- ─────────────────────────────────────────────────────────────
+    -- PASO 2: fact_operaciones_mensuales — remanent_reserves_bbl
+    -- ─────────────────────────────────────────────────────────────
+    WITH latest_arps AS (
+        SELECT DISTINCT ON (well_id)
+            well_id,
+            eur_total,
+            eur_p50,
+            fecha_analisis
+        FROM universal.arps_resultados_declinacion
+        ORDER BY well_id, fecha_analisis DESC
+    )
+    UPDATE reporting.fact_operaciones_mensuales fom
+    SET
+        remanent_reserves_bbl = COALESCE(la.eur_p50, la.eur_total)
+                                - COALESCE(fom.produccion_petroleo_acumulada_bbl, 0)
+    FROM latest_arps la
+    WHERE fom.pozo_id = la.well_id;
+
+    RAISE NOTICE '[ARPS→REPORTING] Sincronización completada (kpi_business + mensuales).';
 END;
 $$;
 
 COMMENT ON PROCEDURE reporting.sp_sync_arps_to_reporting() IS
-'Sincroniza EUR remanente desde universal.arps_resultados_declinacion (P50) hacia reporting.dataset_kpi_business.';
+'Sincroniza ARPS hacia reporting: eur_remanente_bbl = ARPS(eur_p50|eur_total) - Np en dataset_kpi_business y remanent_reserves_bbl en fact_mensuales. Invocado mensualmente por EventBridge.';

@@ -577,15 +577,35 @@ BEGIN
     -- =====================================================================
     -- PASO D: RESERVAS Y VIDA ÚTIL (todas las filas del rango)
     -- =====================================================================
+    -- LÓGICA DUAL:
+    --   DEFAULT: RR = Total.Reserves (reserva_inicial_teorica) - Np (acumulada)
+    --   ARPS:    Si existe eur_total de universal.arps_resultados_declinacion,
+    --            sustituye Total.Reserves por eur_total (dinámico, mensual EventBridge)
+    --
+    -- Prioridad: ARPS eur_total > reserva_inicial_teorica (estático)
+    -- vida_util = RR / produccion_real_bbl (días)
+    -- =====================================================================
     UPDATE reporting.dataset_kpi_business b
     SET
-        eur_remanente_bbl = r.reserva_inicial_teorica,
+        eur_remanente_bbl = COALESCE(arps.eur_total, r.reserva_inicial_teorica)
+                            - COALESCE(b.produccion_acumulada_bbl, 0),
         vida_util_estimada_dias = CASE
             WHEN b.produccion_real_bbl > 0 THEN
-                ROUND(r.reserva_inicial_teorica / b.produccion_real_bbl)::INTEGER
+                ROUND(
+                    (COALESCE(arps.eur_total, r.reserva_inicial_teorica)
+                     - COALESCE(b.produccion_acumulada_bbl, 0))
+                    / b.produccion_real_bbl
+                )::INTEGER
             ELSE NULL
         END
     FROM stage.tbl_pozo_reservas r
+    LEFT JOIN LATERAL (
+        SELECT a.eur_total
+        FROM universal.arps_resultados_declinacion a
+        WHERE a.well_id = b.well_id
+        ORDER BY a.fecha_analisis DESC
+        LIMIT 1
+    ) arps ON true
     WHERE b.well_id = r.well_id
       AND b.fecha BETWEEN p_fecha_inicio AND p_fecha_fin;
 
