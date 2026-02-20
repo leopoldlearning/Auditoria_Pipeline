@@ -346,17 +346,9 @@ LANGUAGE plpgsql AS $$
 DECLARE
     v_fecha_inicio DATE := COALESCE(p_fecha_inicio, CURRENT_DATE - INTERVAL '30 days');
     v_fecha_fin DATE := COALESCE(p_fecha_fin, CURRENT_DATE);
-    v_tarifa_kwh DECIMAL(10,4) := 0.12;
-    v_lifting_cost DECIMAL(10,4) := 2.50;
     v_count INT := 0;
 BEGIN
     RAISE NOTICE '[V9] Completando fact_operaciones_diarias para % a %...', v_fecha_inicio, v_fecha_fin;
-    
-    -- Obtener tarifa energía y lifting cost desde config centralizada
-    SELECT COALESCE(valor, 0.12) INTO v_tarifa_kwh 
-    FROM referencial.tbl_config_kpi WHERE kpi_nombre='ENERGIA' AND parametro='tarifa_kwh_usd';
-    SELECT COALESCE(valor, 2.50) INTO v_lifting_cost 
-    FROM referencial.tbl_config_kpi WHERE kpi_nombre='LIFTING_COST' AND parametro='default_usd_bbl';
     
     -- MTBF: cuando hay 0 fallas, usar horas acumuladas del pozo como MTBF
     UPDATE reporting.fact_operaciones_diarias SET
@@ -378,12 +370,6 @@ BEGIN
                 ELSE NULL
             END
         ),
-        -- Costo operativo estimado: consumo_kwh * tarifa + lifting_cost * produccion
-        costo_operativo_estimado_usd = COALESCE(
-            costo_operativo_estimado_usd,
-            ROUND((COALESCE(consumo_energia_kwh, 0) * v_tarifa_kwh + 
-                   COALESCE(produccion_fluido_bbl, 0) * v_lifting_cost)::NUMERIC, 2)  -- lifting cost desde tbl_config_kpi
-        ),
         -- EUR Arps: estimación simplificada desde reservas
         eur_modelo_arps = COALESCE(
             eur_modelo_arps,
@@ -396,7 +382,7 @@ BEGIN
     WHERE fecha_id IN (
         SELECT fecha_id FROM reporting.dim_tiempo WHERE fecha BETWEEN v_fecha_inicio AND v_fecha_fin
     )
-    AND (kpi_mtbf_hrs IS NULL OR costo_operativo_estimado_usd IS NULL OR eur_modelo_arps IS NULL);
+    AND (kpi_mtbf_hrs IS NULL OR eur_modelo_arps IS NULL);
     
     GET DIAGNOSTICS v_count = ROW_COUNT;
     RAISE NOTICE '[V9] fact_diarias completado: % filas actualizadas', v_count;
@@ -467,9 +453,9 @@ DECLARE
 BEGIN
     RAISE NOTICE '[V9] Calculando KPIs business para fecha: %', v_fecha;
     
-    -- Actualizar kpi_mtbf_dias desde dataset_current_values (columnas V7 WIDE)
+    -- Actualizar kpi_mtbf_days desde dataset_current_values (columnas V7 WIDE)
     UPDATE reporting.dataset_kpi_business SET
-        kpi_mtbf_dias = CASE 
+        kpi_mtbf_days = CASE 
             WHEN dcv.kpi_mtbf_hrs_act IS NOT NULL THEN dcv.kpi_mtbf_hrs_act / 24.0
             ELSE NULL
         END
@@ -479,7 +465,7 @@ BEGIN
     ) dcv
     WHERE dataset_kpi_business.well_id = dcv.well_id
       AND dataset_kpi_business.fecha = v_fecha
-      AND dataset_kpi_business.kpi_mtbf_dias IS NULL;
+      AND dataset_kpi_business.kpi_mtbf_days IS NULL;
     
     GET DIAGNOSTICS v_count = ROW_COUNT;
     RAISE NOTICE '[V9] KPIs business actualizados: % filas', v_count;
@@ -795,7 +781,7 @@ BEGIN
         CALL reporting.sp_calcular_promedios_diarios(p_fecha_inicio, p_fecha_fin);
     END IF;
     
-    -- Completar diarias (MTBF, costo_operativo, EUR)
+    -- Completar diarias (MTBF, EUR)
     CALL reporting.sp_completar_fact_diarias(p_fecha_inicio, p_fecha_fin);
     
     -- Re-agregar mensuales desde diarias actualizadas

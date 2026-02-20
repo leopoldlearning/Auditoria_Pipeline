@@ -124,10 +124,28 @@ BEGIN
         -- [V6.1] Carga y Eficiencia calculados
         p.maximum_rod_load,         -- max_rod_load_lb_act (ID:76 directo SCADA)
         p.minimum_rod_load,         -- min_rod_load_lb_act (ID:77 directo SCADA)
-        -- max_pump_load_lb_act: monitor_carga_bomba (ID:74 directo SCADA)
-        p.monitor_carga_bomba,
-        -- min_pump_load_lb_act: monitor_carga_bomba (ID:74 directo SCADA)
-        p.monitor_carga_bomba,
+        -- max_pump_load_lb_act: MAX(monitor_carga_bomba ID:74) en ventana [último snapshot, lectura actual]
+        (SELECT MAX(pp.monitor_carga_bomba)
+         FROM stage.tbl_pozo_produccion pp
+         WHERE pp.well_id = m.well_id
+           AND pp.monitor_carga_bomba IS NOT NULL
+           AND pp.timestamp_lectura > COALESCE(
+               (SELECT cv.ultima_actualizacion
+                FROM reporting.dataset_current_values cv
+                WHERE cv.well_id = m.well_id),
+               p.timestamp_lectura - INTERVAL '1 hour')
+           AND pp.timestamp_lectura <= p.timestamp_lectura),
+        -- min_pump_load_lb_act: MIN(monitor_carga_bomba ID:74) en ventana [último snapshot, lectura actual]
+        (SELECT MIN(pp.monitor_carga_bomba)
+         FROM stage.tbl_pozo_produccion pp
+         WHERE pp.well_id = m.well_id
+           AND pp.monitor_carga_bomba IS NOT NULL
+           AND pp.timestamp_lectura > COALESCE(
+               (SELECT cv.ultima_actualizacion
+                FROM reporting.dataset_current_values cv
+                WHERE cv.well_id = m.well_id),
+               p.timestamp_lectura - INTERVAL '1 hour')
+           AND pp.timestamp_lectura <= p.timestamp_lectura),
         ROUND((p.maximum_rod_load / NULLIF(m.carga_nominal_unidad, 0)) * 100, 2),  -- road_load_pct_act
         p.eficiencia_levantamiento, -- lift_efficiency_pct_act
 

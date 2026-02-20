@@ -448,8 +448,8 @@ CREATE TABLE IF NOT EXISTS reporting.dataset_current_values (
     -- [NUEVO] Cargas y Pesos
     max_rod_load_lb_act DECIMAL(10,2),      -- ID:76 directo SCADA
     min_rod_load_lb_act DECIMAL(10,2),      -- ID:77 directo SCADA
-    max_pump_load_lb_act DECIMAL(10,2),     -- ID:74 directo SCADA (monitor_carga_bomba)
-    min_pump_load_lb_act DECIMAL(10,2),     -- ID:74 directo SCADA (monitor_carga_bomba)
+    max_pump_load_lb_act DECIMAL(10,2),     -- MAX(ID:74 monitor_carga_bomba) en ventana [último snapshot, lectura actual]
+    min_pump_load_lb_act DECIMAL(10,2),     -- MIN(ID:74 monitor_carga_bomba) en ventana [último snapshot, lectura actual]
     
     -- [NUEVO] Road Load (Carga Varillas) - Zero Calc
     road_load_pct_act DECIMAL(5,2),

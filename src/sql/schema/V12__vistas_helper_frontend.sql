@@ -2,11 +2,14 @@
 ================================================================================
 V12 - VISTAS HELPER PARA FRONTEND
 ================================================================================
-Fecha: 2026-02-10 (v2 — Tier 2B: columnas V7 WIDE + escala V8 unificada)
+Fecha: 2026-02-20 (v3 — Sincronizado con V7 WIDE estandarizado + V8)
 Propósito: Simplificar queries comunes del dashboard
-Cambios v2:
-  - Columnas V7 WIDE con prefijo kpi_ (kpi_mtbf_dia, kpi_uptime_dia, etc.)
-  - Sin filtro WHERE periodo (V7 WIDE no tiene columna periodo)
+Cambios v3:
+  - Nombres V7 estandarizados: kpi_mtbf_hrs_*, kpi_uptime_pct_*, kpi_kwh_bbl_*,
+    kpi_vol_eff_pct_*, ai_accuracy_*
+  - Columnas descartadas removidas: costo_energia_usd, tiempo_operacion_hrs,
+    tiempo_paro_hrs, fail_count, produccion_acumulada_bbl
+  - AI Accuracy añadido a vistas daily/monthly
   - Alertas con escala V8 (0-9): >= 3 = Alerta+
 ================================================================================
 */
@@ -46,6 +49,10 @@ SELECT
     cv.vol_eff_severity_label AS vol_eff_status,
     cv.vol_eff_target,
     
+    cv.ai_accuracy_act,
+    cv.ai_accuracy_status_color,
+    cv.ai_accuracy_severity_label AS ai_accuracy_status,
+    
     -- Producción
     cv.produccion_fluido_bpd_act AS produccion_actual,
     cv.produccion_petroleo_diaria_bpd_act AS oil_production,
@@ -76,12 +83,12 @@ JOIN reporting.dim_pozo dp ON cv.well_id = dp.pozo_id;
 COMMENT ON VIEW reporting.vw_dashboard_main IS 
 'Vista consolidada para dashboard principal.
 Query simple: SELECT * FROM vw_dashboard_main WHERE well_id = ?
-Contiene: Cards superiores + Metadata + Estado operacional.';
+Contiene: Cards superiores (5 KPIs) + Metadata + Estado operacional.';
 
 
 -- =============================================================================
 -- VISTA 2: KPIs Históricos Diarios (Para Gráficas)
---   V7 WIDE: usa columnas _dia (kpi_mtbf_dia, kpi_uptime_dia, etc.)
+--   V7 WIDE estandarizado: kpi_mtbf_hrs_dia, kpi_uptime_pct_dia, etc.
 --   SIN filtro periodo (V7 no tiene esa columna — diseño WIDE)
 -- =============================================================================
 CREATE OR REPLACE VIEW reporting.vw_kpi_daily_history AS
@@ -93,22 +100,23 @@ SELECT
     kb.region,
     
     -- MTBF
-    kb.kpi_mtbf_dia       AS mtbf_actual,
-    kb.kpi_mtbf_target    AS mtbf_target,
-    kb.kpi_mtbf_baseline  AS mtbf_baseline,
-    kb.kpi_mtbf_variance_pct  AS mtbf_variance_pct,
-    kb.kpi_mtbf_status_color  AS mtbf_status_color,
-    kb.kpi_mtbf_status_level  AS mtbf_status_level,
-    kb.kpi_mtbf_severity_label AS mtbf_severity_label,
+    kb.kpi_mtbf_hrs_dia       AS mtbf_actual,
+    kb.kpi_mtbf_hrs_target    AS mtbf_target,
+    kb.kpi_mtbf_hrs_baseline  AS mtbf_baseline,
+    kb.kpi_mtbf_hrs_variance_pct  AS mtbf_variance_pct,
+    kb.kpi_mtbf_hrs_status_color  AS mtbf_status_color,
+    kb.kpi_mtbf_hrs_status_level  AS mtbf_status_level,
+    kb.kpi_mtbf_hrs_severity_label AS mtbf_severity_label,
+    kb.kpi_mtbf_days,
     
     -- Uptime
-    kb.kpi_uptime_dia       AS uptime_actual,
-    kb.kpi_uptime_target    AS uptime_target,
-    kb.kpi_uptime_baseline  AS uptime_baseline,
-    kb.kpi_uptime_variance_pct  AS uptime_variance_pct,
-    kb.kpi_uptime_status_color  AS uptime_status_color,
-    kb.kpi_uptime_status_level  AS uptime_status_level,
-    kb.kpi_uptime_severity_label AS uptime_severity_label,
+    kb.kpi_uptime_pct_dia       AS uptime_actual,
+    kb.kpi_uptime_pct_target    AS uptime_target,
+    kb.kpi_uptime_pct_baseline  AS uptime_baseline,
+    kb.kpi_uptime_pct_variance_pct  AS uptime_variance_pct,
+    kb.kpi_uptime_pct_status_color  AS uptime_status_color,
+    kb.kpi_uptime_pct_status_level  AS uptime_status_level,
+    kb.kpi_uptime_pct_severity_label AS uptime_severity_label,
     
     -- kWh/bbl
     kb.kpi_kwh_bbl_dia       AS kwh_bbl_actual,
@@ -119,34 +127,38 @@ SELECT
     kb.kpi_kwh_bbl_status_level  AS kwh_bbl_status_level,
     kb.kpi_kwh_bbl_severity_label AS kwh_bbl_severity_label,
     kb.consumo_kwh,
-    kb.costo_energia_usd,
     
     -- Vol Eff
-    kb.kpi_vol_eff_dia       AS vol_eff_actual,
-    kb.kpi_vol_eff_target    AS vol_eff_target,
-    kb.kpi_vol_eff_baseline  AS vol_eff_baseline,
-    kb.kpi_vol_eff_variance_pct  AS vol_eff_variance_pct,
-    kb.kpi_vol_eff_status_color  AS vol_eff_status_color,
-    kb.kpi_vol_eff_status_level  AS vol_eff_status_level,
-    kb.kpi_vol_eff_severity_label AS vol_eff_severity_label,
+    kb.kpi_vol_eff_pct_dia       AS vol_eff_actual,
+    kb.kpi_vol_eff_pct_target    AS vol_eff_target,
+    kb.kpi_vol_eff_pct_baseline  AS vol_eff_baseline,
+    kb.kpi_vol_eff_pct_variance_pct  AS vol_eff_variance_pct,
+    kb.kpi_vol_eff_pct_status_color  AS vol_eff_status_color,
+    kb.kpi_vol_eff_pct_status_level  AS vol_eff_status_level,
+    kb.kpi_vol_eff_pct_severity_label AS vol_eff_severity_label,
+    
+    -- AI Accuracy
+    kb.ai_accuracy_dia,
+    kb.ai_accuracy_target,
+    kb.ai_accuracy_baseline,
+    kb.ai_accuracy_variance_pct,
+    kb.ai_accuracy_status_color,
+    kb.ai_accuracy_status_level,
+    kb.ai_accuracy_severity_label,
     
     -- Producción
     kb.produccion_real_bbl,
     kb.produccion_teorica_bbl,
     
-    -- Operación
-    kb.tiempo_operacion_hrs,
-    kb.tiempo_paro_hrs,
-    kb.fail_count,
-    
     -- Calidad
     kb.calidad_datos_pct
 
 FROM reporting.dataset_kpi_business kb
-WHERE kb.kpi_mtbf_dia IS NOT NULL;  -- Solo filas con datos diarios
+WHERE kb.kpi_mtbf_hrs_dia IS NOT NULL;  -- Solo filas con datos diarios
 
 COMMENT ON VIEW reporting.vw_kpi_daily_history IS 
-'Vista de KPIs históricos diarios (V7 WIDE: columnas kpi_*_dia).
+'Vista de KPIs históricos diarios (V7 WIDE estandarizado).
+Columnas: kpi_mtbf_hrs_dia, kpi_uptime_pct_dia, kpi_kwh_bbl_dia, kpi_vol_eff_pct_dia, ai_accuracy_dia.
 Query: SELECT * FROM vw_kpi_daily_history 
        WHERE well_id = ? AND fecha BETWEEN ? AND ?
 Uso: Gráficas de evolución diaria con filtro mensual.';
@@ -154,7 +166,7 @@ Uso: Gráficas de evolución diaria con filtro mensual.';
 
 -- =============================================================================
 -- VISTA 3: Comparación Mensual
---   V7 WIDE: usa columnas _mes (kpi_mtbf_mes, kpi_uptime_mes, etc.)
+--   V7 WIDE estandarizado: kpi_mtbf_hrs_mes, kpi_uptime_pct_mes, etc.
 -- =============================================================================
 CREATE OR REPLACE VIEW reporting.vw_kpi_monthly_summary AS
 SELECT 
@@ -163,35 +175,36 @@ SELECT
     kb.fecha AS mes,
     TO_CHAR(kb.fecha, 'Mon YYYY') AS mes_label,
     
-    kb.kpi_mtbf_mes      AS mtbf_actual,
-    kb.kpi_mtbf_target   AS mtbf_target,
-    kb.kpi_mtbf_status_color AS mtbf_status_color,
+    kb.kpi_mtbf_hrs_mes      AS mtbf_actual,
+    kb.kpi_mtbf_hrs_target   AS mtbf_target,
+    kb.kpi_mtbf_hrs_status_color AS mtbf_status_color,
+    kb.kpi_mtbf_days,
     
-    kb.kpi_uptime_mes      AS uptime_actual,
-    kb.kpi_uptime_target   AS uptime_target,
-    kb.kpi_uptime_status_color AS uptime_status_color,
+    kb.kpi_uptime_pct_mes      AS uptime_actual,
+    kb.kpi_uptime_pct_target   AS uptime_target,
+    kb.kpi_uptime_pct_status_color AS uptime_status_color,
     
     kb.kpi_kwh_bbl_mes      AS kwh_bbl_actual,
     kb.kpi_kwh_bbl_target   AS kwh_bbl_target,
     kb.kpi_kwh_bbl_status_color AS kwh_bbl_status_color,
     kb.consumo_kwh AS consumo_total_kwh,
-    kb.costo_energia_usd AS costo_total_usd,
     
-    kb.kpi_vol_eff_mes      AS vol_eff_actual,
-    kb.kpi_vol_eff_target   AS vol_eff_target,
-    kb.kpi_vol_eff_status_color AS vol_eff_status_color,
+    kb.kpi_vol_eff_pct_mes      AS vol_eff_actual,
+    kb.kpi_vol_eff_pct_target   AS vol_eff_target,
+    kb.kpi_vol_eff_pct_status_color AS vol_eff_status_color,
+    
+    kb.ai_accuracy_mes,
+    kb.ai_accuracy_target,
+    kb.ai_accuracy_status_color,
     
     kb.produccion_real_bbl AS produccion_mes_bbl,
-    kb.produccion_acumulada_bbl,
-    
-    kb.tiempo_operacion_hrs,
-    kb.fail_count AS fallas_mes
+    kb.calidad_datos_pct
 
 FROM reporting.dataset_kpi_business kb
-WHERE kb.kpi_mtbf_mes IS NOT NULL;  -- Solo filas con datos mensuales
+WHERE kb.kpi_mtbf_hrs_mes IS NOT NULL;  -- Solo filas con datos mensuales
 
 COMMENT ON VIEW reporting.vw_kpi_monthly_summary IS 
-'Vista de KPIs mensuales (V7 WIDE: columnas kpi_*_mes).
+'Vista de KPIs mensuales (V7 WIDE estandarizado).
 Query: SELECT * FROM vw_kpi_monthly_summary 
        WHERE well_id = ? AND mes >= ?
 Uso: Comparación de varios meses, gráficas de barras agrupadas.';
