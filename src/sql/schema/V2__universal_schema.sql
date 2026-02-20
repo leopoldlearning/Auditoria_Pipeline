@@ -18,10 +18,14 @@
 --   V2.0.0 (2026-02-16) — Rediseño completo:
 --     • CDI normalizado: patron → stroke → diagnostico → validacion_experta (4 tablas)
 --     • IPR actualizado: BIGSERIAL PK, INTEGER well_id, FK a stage.tbl_pozo_maestra,
---       NUMERIC en vez de FLOAT, punto_operacion_bpd añadido
+--       nombres ML originales (qmax, ip), nuevos: pwf_actual, pip_actual, curva_bomba, origen
+--       UNIQUE ampliado a (well_id, fecha_calculo, metodo, origen)
+--     • IPR Puntos de Operación (NUEVO): tabla ipr_puntos_operacion para flujo DIA-1h,
+--       variables READ (q_actual) vs CALC (pwf_calculado, eficiencia), FK a curva referencia
 --     • ARPS actualizado: BIGSERIAL PK, INTEGER well_id, FK a stage.tbl_pozo_maestra,
---       pronostico_30d/90d y EUR P10/P50/P90 añadidos
+--       nombres ML originales (qi, di, b, eur_total). R² mantenido (scoring modelo)
 --     • ELIMINADO: cartas_dinagraficas_diagnosticos (reemplazado por subsistema CDI)
+--     • ELIMINADO de ARPS: rmse, mape (no persistidos por el servicio Declinación)
 --     • DROP SCHEMA CASCADE removido (idempotente con IF NOT EXISTS)
 --     • Todas las tablas con COMMENT, created_at, índices en FK
 --
@@ -34,13 +38,14 @@
 --   • (futuro) módulo Autopilot CDI — clasificación de dynacards
 --   • (futuro) módulo IPR/ARPS      — pronóstico de reservas
 --
--- TABLAS (6):
+-- TABLAS (7):
 --   A. universal.patron                      — Catálogo de patrones de falla CDI
 --   B. universal.stroke                      — Carreras de bombeo por registro de producción
 --   C. universal.diagnostico                 — Resultado ML: score por patrón por stroke
 --   D. universal.validacion_experta          — Validación humana (ground truth)
 --   E. universal.ipr_resultados              — Curvas IPR y métricas de productividad
---   F. universal.arps_resultados_declinacion — Parámetros y pronóstico de declinación
+--   F. universal.ipr_puntos_operacion        — Punto de operación horario (DIA-1h)
+--   G. universal.arps_resultados_declinacion — Parámetros y pronóstico de declinación
 -- =============================================================================
 
 CREATE SCHEMA IF NOT EXISTS universal;
@@ -184,23 +189,28 @@ COMMENT ON TABLE universal.validacion_experta IS
 -- V1→V2 CAMBIOS:
 --   • UUID PK → BIGSERIAL (consistencia con pipeline)
 --   • VARCHAR id_pozo → INTEGER well_id + FK a stage.tbl_pozo_maestra
---   • FLOAT → NUMERIC (precisión decimal)
---   • Añadido: punto_operacion_bpd, UNIQUE constraint, created_at
+--   • Nombres de columnas conservados del modelo ML original (qmax, ip)
+--   • Añadido: pwf_actual, pip_actual, punto_operacion_bpd, curva_bomba, origen
+--   • UNIQUE ampliado: incluye metodo + origen (soporta multi-método)
 -- =============================================================================
 
 CREATE TABLE universal.ipr_resultados (
     ipr_id              BIGSERIAL    PRIMARY KEY,                      -- PK auto-incremental (antes UUID)
     well_id             INTEGER      NOT NULL,                         -- FK → stage.tbl_pozo_maestra
     fecha_calculo       TIMESTAMPTZ  NOT NULL,                         -- Timestamp del cálculo
-    metodo              VARCHAR(100),                                  -- Método: Vogel | Fetkovitch | Jones | Darcy
-    qmax_bpd            NUMERIC(10,2),                                 -- Tasa máxima teórica (bpd)
-    ip_factor           NUMERIC(10,4),                                 -- Índice de Productividad (bpd/psi)
-    punto_operacion_bpd NUMERIC(10,2),                                 -- Q esperado en punto de operación (bpd)
+    metodo              VARCHAR(100),                                  -- Método: Darcy | Vogel | Combinado | PQHT
+    origen              VARCHAR(20)  DEFAULT 'DIA-24h',                -- Source: EVD | DIA-24h | DIA-1h
+    qmax                FLOAT,                                         -- Tasa máxima teórica (bpd)
+    ip                  FLOAT,                                         -- Índice de Productividad (bpd/psi)
+    pwf_actual          FLOAT,                                         -- Pwf en punto de operación actual (psi)
+    pip_actual          FLOAT,                                         -- PIP calculado en punto de operación (psi)
+    punto_operacion_bpd FLOAT,                                         -- Q en punto de operación (bpd)
     curva_yacimiento    JSONB,                                         -- Curva completa: {"q": [...], "pwf": [...]}
+    curva_bomba         JSONB,                                         -- Curva bomba: {"q": [...], "pip": [...]}
     alertas             JSONB,                                         -- Alertas generadas: ["presión baja", ...]
     created_at          TIMESTAMPTZ  NOT NULL DEFAULT now(),            -- Auditoría
 
-    CONSTRAINT uq_ipr_pozo_fecha UNIQUE (well_id, fecha_calculo),
+    CONSTRAINT uq_ipr_pozo_fecha_metodo UNIQUE (well_id, fecha_calculo, metodo, origen),
 
     CONSTRAINT fk_ipr_pozo
         FOREIGN KEY (well_id)
@@ -214,11 +224,73 @@ COMMENT ON TABLE universal.ipr_resultados IS
 
 
 -- =============================================================================
--- SECCIÓN F: ARPS — DECLINE CURVE ANALYSIS
+-- SECCIÓN F: IPR — PUNTOS DE OPERACIÓN (DIA-1h)
+-- =============================================================================
+-- Punto de operación horario calculado por el flujo FDDIPR-UNI001-DIA (cada 1h).
+-- Proyecta lecturas SCADA actuales (q_actual READ, ip_actual DERIVADO) sobre la
+-- curva IPR más reciente para obtener Pwf, eficiencia y alertas.
+--
+-- CLASIFICACIÓN DE VARIABLES:
+--   • q_actual        — READ  (SCADA produccion_fluido_bpd, env CURRENT_Q)
+--   • ip_actual       — DERIV (ip de la curva ipr_resultados más reciente)
+--   • pwf_calculado   — CALC  (Pe - q_actual / ip_actual)
+--   • eficiencia      — CALC  ((q_actual / qmax) * 100)
+--   • alertas         — GEN   (si eficiencia < 50% o > 95%)
+--
+-- CORRELACIÓN CON REPORTING:
+--   • q_actual         = reporting.dataset_current_values.produccion_fluido_bpd_act
+--   • eficiencia       → reporting.dataset_current_values.ipr_eficiencia_flujo_pct
+--   • curva_referencia → universal.ipr_resultados.ipr_id (DIA-24h o EVD)
+--
+-- Fuente: ipr-service, modo operating_point (EXECUTION_MODE=operating_point)
+-- Granularidad: 1 fila por pozo × hora (upsert por hora truncada).
+--
+-- V2 NUEVO (no existía en V1 de BP010; referencia: hrp V1+V3 migration)
+-- =============================================================================
+
+CREATE TABLE universal.ipr_puntos_operacion (
+    punto_op_id        BIGSERIAL    PRIMARY KEY,                       -- PK auto-incremental (hrp usa UUID)
+    well_id            INTEGER      NOT NULL,                          -- FK → stage.tbl_pozo_maestra
+    fecha_calculo      TIMESTAMPTZ  NOT NULL DEFAULT now(),            -- Timestamp del cálculo
+    q_actual           FLOAT        NOT NULL,                          -- READ: tasa actual de producción (bpd)
+    pwf_calculado      FLOAT        NOT NULL,                          -- CALC: Pwf = Pe - q/IP (psi)
+    ip_actual          FLOAT        NOT NULL,                          -- DERIV: IP de la curva referencia (bpd/psi)
+    eficiencia         FLOAT,                                          -- CALC: (q_actual / qmax) * 100
+    alertas            JSONB,                                          -- GEN: ["eficiencia baja", ...]
+    curva_referencia_id BIGINT,                                        -- FK → ipr_resultados.ipr_id (curva usada)
+    created_at         TIMESTAMPTZ  NOT NULL DEFAULT now(),            -- Auditoría
+
+    CONSTRAINT fk_punto_op_pozo
+        FOREIGN KEY (well_id)
+        REFERENCES stage.tbl_pozo_maestra (well_id),
+
+    CONSTRAINT fk_punto_op_curva
+        FOREIGN KEY (curva_referencia_id)
+        REFERENCES universal.ipr_resultados (ipr_id)
+);
+
+CREATE INDEX idx_punto_op_pozo_fecha
+    ON universal.ipr_puntos_operacion (well_id, fecha_calculo DESC);
+
+CREATE INDEX idx_punto_op_curva_ref
+    ON universal.ipr_puntos_operacion (curva_referencia_id);
+
+COMMENT ON TABLE universal.ipr_puntos_operacion IS
+'Puntos de operación horarios (DIA-1h). Proyecta q_actual (SCADA) sobre la curva IPR vigente para calcular Pwf, eficiencia y alertas. 1 fila por pozo × hora.';
+
+COMMENT ON COLUMN universal.ipr_puntos_operacion.eficiencia IS
+'Eficiencia operativa: (q_actual / qmax_de_curva_referencia) * 100';
+
+COMMENT ON COLUMN universal.ipr_puntos_operacion.curva_referencia_id IS
+'FK a la curva IPR (DIA-24h o EVD) usada para el cálculo del punto de operación';
+
+
+-- =============================================================================
+-- SECCIÓN G: ARPS — DECLINE CURVE ANALYSIS
 -- =============================================================================
 -- Resultados del modelo de declinación: parámetros del ajuste (qi, di, b),
 -- bondad de ajuste (R²), reservas estimadas (EUR) con incertidumbre
--- probabilística (P10/P50/P90), y pronósticos a 30/90 días.
+-- probabilística (P10/P50/P90).
 --
 -- Fuente: módulo src/declinacion_reservas/ (Python)
 -- Granularidad: 1 fila por pozo × fecha × tipo_curva.
@@ -226,9 +298,9 @@ COMMENT ON TABLE universal.ipr_resultados IS
 -- V1→V2 CAMBIOS:
 --   • UUID PK → BIGSERIAL (consistencia con pipeline)
 --   • VARCHAR id_pozo → INTEGER well_id + FK a stage.tbl_pozo_maestra
---   • FLOAT → NUMERIC (precisión decimal)
---   • Añadido: pronostico_30d_bpd, pronostico_90d_bpd, created_at
+--   • Nombres de columnas conservados del modelo ML original (qi, di, b, eur_total)
 --   • UNIQUE ampliado: incluye tipo_curva (soporta múltiples ajustes por fecha)
+--   • ELIMINADO: rmse, mape (no persistidos por servicio Declinación de hrp)
 -- =============================================================================
 
 CREATE TABLE universal.arps_resultados_declinacion (
@@ -236,16 +308,14 @@ CREATE TABLE universal.arps_resultados_declinacion (
     well_id            INTEGER      NOT NULL,                          -- FK → stage.tbl_pozo_maestra
     fecha_analisis     TIMESTAMPTZ  NOT NULL,                          -- Timestamp del análisis
     tipo_curva         VARCHAR(50),                                    -- Exponencial | Hiperbólica | Armónica
-    qi_bpd             NUMERIC(10,2),                                  -- Tasa inicial de producción (bpd)
-    di_nominal         NUMERIC(8,6),                                   -- Tasa de declinación nominal (1/día)
-    b_factor           NUMERIC(5,3),                                   -- Factor b: 0=exp, 0<b<1=hip, b=1=arm
-    r_squared          NUMERIC(6,4),                                   -- Coeficiente R² del ajuste (0–1)
-    eur_bbl            NUMERIC(12,2),                                  -- Estimated Ultimate Recovery (bbl)
-    eur_p10            NUMERIC(12,2),                                  -- EUR percentil 10 (optimista)
-    eur_p50            NUMERIC(12,2),                                  -- EUR percentil 50 (caso más probable)
-    eur_p90            NUMERIC(12,2),                                  -- EUR percentil 90 (conservador)
-    pronostico_30d_bpd NUMERIC(10,2),                                  -- Pronóstico a 30 días (bpd)
-    pronostico_90d_bpd NUMERIC(10,2),                                  -- Pronóstico a 90 días (bpd)
+    qi                 FLOAT,                                          -- Tasa inicial de producción (bpd)
+    di                 FLOAT,                                          -- Tasa de declinación nominal (1/día)
+    b                  FLOAT,                                          -- Factor b: 0=exp, 0<b<1=hip, b=1=arm
+    r_squared          FLOAT,                                          -- Coeficiente R² del ajuste (0–1)
+    eur_total          FLOAT,                                          -- Estimated Ultimate Recovery (bbl)
+    eur_p10            FLOAT,                                          -- EUR percentil 10 (optimista)
+    eur_p50            FLOAT,                                          -- EUR percentil 50 (caso más probable)
+    eur_p90            FLOAT,                                          -- EUR percentil 90 (conservador)
     created_at         TIMESTAMPTZ  NOT NULL DEFAULT now(),            -- Auditoría
 
     CONSTRAINT uq_arps_pozo_fecha_tipo UNIQUE (well_id, fecha_analisis, tipo_curva),

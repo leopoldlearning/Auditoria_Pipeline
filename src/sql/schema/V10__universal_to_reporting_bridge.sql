@@ -9,10 +9,10 @@
 --   esquema REPORTING (dashboard/BI). Tres stored procedures que sincronizan:
 --
 --   1. sp_sync_cdi_to_reporting()  — CDI dynacards → dataset_current_values
---                                                    + dataset_latest_dynacard
 --                                                    + fact_operaciones_horarias
 --   2. sp_sync_ipr_to_reporting()  — IPR curvas     → dataset_current_values
---                                                    + fact_operaciones_horarias
+--                                    IPR op.point  → ipr_eficiencia_flujo_pct
+--                                                  + fact_operaciones_horarias
 --   3. sp_sync_arps_to_reporting() — ARPS decline   → dataset_kpi_business
 --
 -- FLUJO DE DATOS:
@@ -21,10 +21,10 @@
 -- │  universal.stroke ──┼─→ sp_sync_cdi_to_reporting()                 │
 -- │  universal.diagnostico                                             │
 -- │        │                    ┌─→ reporting.dataset_current_values    │
--- │        └────────────────────┼─→ reporting.dataset_latest_dynacard  │
--- │                             └─→ reporting.fact_operaciones_horarias │
+-- │        └────────────────────┴─→ reporting.fact_operaciones_horarias │
 -- │                                                                    │
 -- │  universal.ipr_resultados ──→ sp_sync_ipr_to_reporting()           │
+-- │  universal.ipr_puntos_operacion                                    │
 -- │        │                    ┌─→ reporting.dataset_current_values    │
 -- │        └────────────────────┘                                      │
 -- │                                                                    │
@@ -34,8 +34,9 @@
 -- └─────────────────────────────────────────────────────────────────────┘
 --
 -- DEPENDENCIAS (REQUIERE):
---   • universal schema V2  (patron, stroke, diagnostico, ipr, arps)
---   • reporting schema V4  (dataset_current_values, dataset_latest_dynacard,
+--   • universal schema V2  (patron, stroke, diagnostico, ipr_resultados,
+--                           ipr_puntos_operacion, arps_resultados_declinacion)
+--   • reporting schema V4  (dataset_current_values,
 --                           fact_operaciones_horarias, dataset_kpi_business)
 --   • referencial.fnc_evaluar_variable()  (V7 — clasificación semáforo)
 --
@@ -191,24 +192,49 @@ COMMENT ON PROCEDURE reporting.sp_sync_cdi_to_reporting() IS
 -- =============================================================================
 -- SP 2: IPR → REPORTING
 -- =============================================================================
--- Sincroniza el cálculo IPR más reciente de cada pozo hacia reporting.
+-- Sincroniza curvas IPR y puntos de operación hacia reporting.
+--
+-- FUENTES:
+--   • universal.ipr_resultados        — curvas DIA-24h / EVD (qmax, ip, curvas)
+--   • universal.ipr_puntos_operacion  — puntos DIA-1h (eficiencia, q_actual, pwf)
+--
+-- CLASIFICACIÓN DE VARIABLES (READ / CALC / DERIVADO):
+--   ipr_resultados:
+--     qmax (CALC), ip (CALC), pwf_actual (CALC: Pe-q/IP), pip_actual (READ: SCADA PIP),
+--     punto_operacion_bpd (CALC), curva_yacimiento (CALC), curva_bomba (CALC)
+--   ipr_puntos_operacion:
+--     q_actual (READ: SCADA bpd), pwf_calculado (CALC: Pe-q/IP),
+--     ip_actual (DERIV: ip de curva), eficiencia (CALC: q/qmax*100)
+--
+-- CORRELACIÓN CON REPORTING:
+--   • q_actual        = dataset_current_values.produccion_fluido_bpd_act (misma fuente SCADA)
+--   • pip_actual      = dataset_current_values.pump_intake_pressure_psi_act (misma fuente SCADA)
+--   • qmax            → dataset_current_values.ipr_qmax_bpd
+--   • eficiencia      → dataset_current_values.ipr_eficiencia_flujo_pct
+--                         PRIORIDAD: punto_operacion (DIA-1h, horario) > fallback curva (DIA-24h)
+--
+-- FLUJO EventBridge COMPATIBLE:
+--   Rule 1 (5min): IPR Service DIA-24h → ipr_resultados
+--   Rule 2 (1h):   IPR Service DIA-1h  → ipr_puntos_operacion
+--   Rule 3 (5min): Reporting ETL        → CALL sp_sync_ipr_to_reporting()
 --
 -- Lógica:
---   1. Para cada pozo, toma el ipr_resultados más reciente
---   2. Actualiza dataset_current_values.ipr_qmax_bpd + ipr_eficiencia_flujo_pct
---   3. Actualiza fact_operaciones_horarias.ipr_qmax_teorico (fila más reciente)
+--   PASO 1: Qmax desde ipr_resultados (curva más reciente por pozo)
+--   PASO 2: Eficiencia — prefiere ipr_puntos_operacion (DIA-1h, más frecuente),
+--           fallback a cálculo produccion_fluido_bpd_act / qmax
+--   PASO 3: fact_operaciones_horarias — ipr_qmax_teorico incremental
 -- =============================================================================
 
 CREATE OR REPLACE PROCEDURE reporting.sp_sync_ipr_to_reporting()
 LANGUAGE plpgsql AS $$
 BEGIN
     -- ─────────────────────────────────────────────────────────────
-    -- PASO 1: dataset_current_values — IPR más reciente por pozo
+    -- PASO 1: dataset_current_values — Qmax desde curva más reciente
     -- ─────────────────────────────────────────────────────────────
     WITH latest_ipr AS (
         SELECT DISTINCT ON (well_id)
             well_id,
-            qmax_bpd,
+            qmax,
             punto_operacion_bpd,
             fecha_calculo
         FROM universal.ipr_resultados
@@ -216,44 +242,88 @@ BEGIN
     )
     UPDATE reporting.dataset_current_values dcv
     SET
-        ipr_qmax_bpd           = li.qmax_bpd,
-        ipr_eficiencia_flujo_pct = CASE 
-            WHEN li.qmax_bpd > 0 AND dcv.bfpd_act IS NOT NULL
-            THEN LEAST((dcv.bfpd_act / li.qmax_bpd) * 100, 100)
-            ELSE dcv.ipr_eficiencia_flujo_pct
-        END
+        ipr_qmax_bpd = li.qmax
     FROM latest_ipr li
     WHERE dcv.well_id = li.well_id;
 
     -- ─────────────────────────────────────────────────────────────
-    -- PASO 2: fact_operaciones_horarias — ipr_qmax_teorico
+    -- PASO 2: dataset_current_values — Eficiencia flujo
+    --   Prioridad: ipr_puntos_operacion.eficiencia (DIA-1h, horario)
+    --   Fallback:  (produccion_fluido_bpd_act / qmax) * 100
+    --
+    --   q_actual (READ) es la misma lectura SCADA que ya vive en
+    --   reporting como produccion_fluido_bpd_act — no se duplica,
+    --   pero la eficiencia ya viene pre-calculada por el servicio.
+    -- ─────────────────────────────────────────────────────────────
+    WITH latest_op AS (
+        SELECT DISTINCT ON (well_id)
+            well_id,
+            eficiencia,
+            fecha_calculo
+        FROM universal.ipr_puntos_operacion
+        ORDER BY well_id, fecha_calculo DESC
+    )
+    UPDATE reporting.dataset_current_values dcv
+    SET
+        ipr_eficiencia_flujo_pct = COALESCE(
+            -- Prioridad 1: eficiencia del punto de operación DIA-1h
+            lop.eficiencia,
+            -- Prioridad 2: cálculo desde producción actual / qmax
+            CASE
+                WHEN dcv.ipr_qmax_bpd > 0 AND dcv.produccion_fluido_bpd_act IS NOT NULL
+                THEN LEAST((dcv.produccion_fluido_bpd_act / dcv.ipr_qmax_bpd) * 100, 100)
+                ELSE dcv.ipr_eficiencia_flujo_pct
+            END
+        )
+    FROM latest_op lop
+    WHERE dcv.well_id = lop.well_id;
+
+    -- ─────────────────────────────────────────────────────────────
+    -- PASO 2b: Pozos SIN punto de operación — fallback solo curva
+    -- ─────────────────────────────────────────────────────────────
+    UPDATE reporting.dataset_current_values dcv
+    SET
+        ipr_eficiencia_flujo_pct = CASE
+            WHEN dcv.ipr_qmax_bpd > 0 AND dcv.produccion_fluido_bpd_act IS NOT NULL
+            THEN LEAST((dcv.produccion_fluido_bpd_act / dcv.ipr_qmax_bpd) * 100, 100)
+            ELSE dcv.ipr_eficiencia_flujo_pct
+        END
+    WHERE dcv.ipr_eficiencia_flujo_pct IS NULL
+      AND dcv.ipr_qmax_bpd IS NOT NULL
+      AND NOT EXISTS (
+          SELECT 1 FROM universal.ipr_puntos_operacion op
+          WHERE op.well_id = dcv.well_id
+      );
+
+    -- ─────────────────────────────────────────────────────────────
+    -- PASO 3: fact_operaciones_horarias — ipr_qmax_teorico
     -- ─────────────────────────────────────────────────────────────
     -- Actualiza TODAS las filas horarias del pozo con el Qmax vigente
     -- al momento de cada lectura, usando el IPR calculado más cercano
     -- anterior o igual al timestamp de la fila horaria.
     UPDATE reporting.fact_operaciones_horarias fh
-    SET ipr_qmax_teorico = sub.qmax_bpd
+    SET ipr_qmax_teorico = sub.qmax
     FROM (
-        SELECT DISTINCT ON (fh2.well_id, fh2.timestamp_lectura)
-            fh2.well_id,
-            fh2.timestamp_lectura,
-            ipr.qmax_bpd
+        SELECT DISTINCT ON (fh2.pozo_id, fh2.fecha_hora)
+            fh2.pozo_id,
+            fh2.fecha_hora,
+            ipr.qmax
         FROM reporting.fact_operaciones_horarias fh2
         JOIN universal.ipr_resultados ipr 
-            ON ipr.well_id = fh2.well_id
-           AND ipr.fecha_calculo <= fh2.timestamp_lectura
+            ON ipr.well_id = fh2.pozo_id
+           AND ipr.fecha_calculo <= fh2.fecha_hora
         WHERE fh2.ipr_qmax_teorico IS NULL  -- solo filas sin valor (incremental)
-        ORDER BY fh2.well_id, fh2.timestamp_lectura, ipr.fecha_calculo DESC
+        ORDER BY fh2.pozo_id, fh2.fecha_hora, ipr.fecha_calculo DESC
     ) sub
-    WHERE fh.well_id = sub.well_id
-      AND fh.timestamp_lectura = sub.timestamp_lectura;
+    WHERE fh.pozo_id = sub.pozo_id
+      AND fh.fecha_hora = sub.fecha_hora;
 
-    RAISE NOTICE '[IPR→REPORTING] Sincronización completada.';
+    RAISE NOTICE '[IPR→REPORTING] Sincronización completada (curvas + puntos operación).';
 END;
 $$;
 
 COMMENT ON PROCEDURE reporting.sp_sync_ipr_to_reporting() IS
-'Sincroniza resultados IPR más recientes desde universal.ipr_resultados hacia reporting.dataset_current_values (Qmax, eficiencia flujo) y fact_operaciones_horarias (ipr_qmax_teorico).';
+'Sincroniza IPR hacia reporting: Qmax desde ipr_resultados (DIA-24h/EVD), eficiencia desde ipr_puntos_operacion (DIA-1h, prioridad) o fallback produccion_bpd/qmax. También actualiza fact_operaciones_horarias.';
 
 
 -- =============================================================================
@@ -275,17 +345,15 @@ BEGIN
     WITH latest_arps AS (
         SELECT DISTINCT ON (well_id)
             well_id,
-            eur_bbl,
+            eur_total,
             eur_p50,
-            pronostico_30d_bpd,
-            pronostico_90d_bpd,
             fecha_analisis
         FROM universal.arps_resultados_declinacion
         ORDER BY well_id, fecha_analisis DESC
     )
     UPDATE reporting.dataset_kpi_business dkb
     SET
-        eur_remanente_bbl = COALESCE(la.eur_p50, la.eur_bbl)
+        eur_remanente_bbl = COALESCE(la.eur_p50, la.eur_total)
     FROM latest_arps la
     WHERE dkb.well_id = la.well_id;
 
