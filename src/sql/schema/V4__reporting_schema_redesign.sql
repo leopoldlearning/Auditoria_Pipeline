@@ -501,26 +501,20 @@ CREATE TABLE IF NOT EXISTS reporting.dataset_current_values (
     inclinacion_severidad_flag VARCHAR(20),
     inclinacion_cilindro_x_act DECIMAL(5,2),
     inclinacion_cilindro_y_act DECIMAL(5,2),
-    
+
+    -- [V4 CARTA] Coordenadas última carta dinagráfica (directo desde stage)
+    surface_rod_position TEXT,          -- ID:155 Current Inch Surface Card
+    surface_rod_load TEXT,              -- ID:156 Current Lb Surface Card
+    downhole_pump_position TEXT,        -- ID:157 Current Inch Downhole Pump Card
+    downhole_pump_load TEXT,            -- ID:158 Current Lb Downhole Pump Card
+
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_curr_campo ON reporting.dataset_current_values(campo);
 CREATE INDEX IF NOT EXISTS idx_curr_region ON reporting.dataset_current_values(region);
 
--- 3.2 dataset_latest_dynacard
-CREATE TABLE IF NOT EXISTS reporting.dataset_latest_dynacard (
-    well_id INT PRIMARY KEY,
-    timestamp_carta TIMESTAMP,
-    superficie_json JSONB, 
-    fondo_json JSONB,
-    carga_min_superficie DECIMAL(10,2),
-    carga_max_superficie DECIMAL(10,2),
-    diagnostico_ia VARCHAR(100), 
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- 3.3 dataset_kpi_business
+-- 3.2 dataset_kpi_business
 CREATE TABLE IF NOT EXISTS reporting.dataset_kpi_business (
     kpi_id BIGINT GENERATED ALWAYS AS IDENTITY,
     fecha DATE,

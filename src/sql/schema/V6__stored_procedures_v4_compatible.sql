@@ -78,7 +78,13 @@ BEGIN
         
         -- [V6.6] KPI MTBF (Mean Time Between Failures)
         kpi_mtbf_hrs_act,                -- horas_operacion / conteo_fallas
-        
+
+        -- [V6.7] Coordenadas última carta dinagráfica (directo desde stage)
+        surface_rod_position,
+        surface_rod_load,
+        downhole_pump_position,
+        downhole_pump_load,
+
         updated_at
     )
     SELECT DISTINCT ON (m.well_id)
@@ -146,7 +152,13 @@ BEGIN
                 p.horas_operacion_acumuladas  -- Sin fallas = MTBF = todas las horas
             ELSE NULL
         END,                                 -- kpi_mtbf_hrs_act
-        
+
+        -- [V6.7] Coordenadas última carta dinagráfica (directo desde stage)
+        p.surface_rod_position,              -- surface_rod_position TEXT
+        p.surface_rod_load,                  -- surface_rod_load TEXT
+        p.downhole_pump_position,            -- downhole_pump_position TEXT
+        p.downhole_pump_load,                -- downhole_pump_load TEXT
+
         NOW()
     FROM stage.tbl_pozo_maestra m
     LEFT JOIN stage.tbl_pozo_produccion p
@@ -205,7 +217,13 @@ BEGIN
         
         -- [V6.6] KPI MTBF
         kpi_mtbf_hrs_act           = EXCLUDED.kpi_mtbf_hrs_act,
-        
+
+        -- [V6.7] Coordenadas carta dinagráfica
+        surface_rod_position       = EXCLUDED.surface_rod_position,
+        surface_rod_load           = EXCLUDED.surface_rod_load,
+        downhole_pump_position     = EXCLUDED.downhole_pump_position,
+        downhole_pump_load         = EXCLUDED.downhole_pump_load,
+
         ultima_actualizacion       = EXCLUDED.ultima_actualizacion,
         updated_at                 = NOW();
 

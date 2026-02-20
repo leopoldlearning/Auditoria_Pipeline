@@ -156,24 +156,7 @@ BEGIN
     WHERE dcv.well_id = wv.well_id;
 
     -- ─────────────────────────────────────────────────────────────
-    -- PASO 3: Actualizar dataset_latest_dynacard
-    -- ─────────────────────────────────────────────────────────────
-    INSERT INTO reporting.dataset_latest_dynacard (
-        well_id, timestamp_carta, diagnostico_ia, updated_at
-    )
-    SELECT
-        td.well_id,
-        td.timestamp_lectura,
-        td.pattern_name || ' (' || ROUND(td.ml_score * 100, 1) || '% - ' || td.pattern_criticality || ')',
-        now()
-    FROM top_diagnostico td
-    ON CONFLICT (well_id) DO UPDATE SET
-        timestamp_carta = EXCLUDED.timestamp_carta,
-        diagnostico_ia  = EXCLUDED.diagnostico_ia,
-        updated_at      = EXCLUDED.updated_at;
-
-    -- ─────────────────────────────────────────────────────────────
-    -- PASO 4: Actualizar fact_operaciones_horarias (fila correspondiente)
+    -- PASO 3: Actualizar fact_operaciones_horarias (fila correspondiente)
     -- ─────────────────────────────────────────────────────────────
     UPDATE reporting.fact_operaciones_horarias fh
     SET
@@ -202,7 +185,7 @@ END;
 $$;
 
 COMMENT ON PROCEDURE reporting.sp_sync_cdi_to_reporting() IS
-'Sincroniza diagnósticos CDI (dynacards) desde universal.stroke/diagnostico/patron hacia reporting.dataset_current_values, dataset_latest_dynacard y fact_operaciones_horarias.';
+'Sincroniza diagnósticos CDI (dynacards) desde universal.stroke/diagnostico/patron hacia reporting.dataset_current_values y fact_operaciones_horarias.';
 
 
 -- =============================================================================
