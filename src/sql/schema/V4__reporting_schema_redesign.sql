@@ -448,8 +448,8 @@ CREATE TABLE IF NOT EXISTS reporting.dataset_current_values (
     -- [NUEVO] Cargas y Pesos
     max_rod_load_lb_act DECIMAL(10,2),      -- ID:76 directo SCADA
     min_rod_load_lb_act DECIMAL(10,2),      -- ID:77 directo SCADA
-    max_pump_load_lb_act DECIMAL(10,2),     -- ETL: MAX(downhole_pump_load ID:158/74)
-    min_pump_load_lb_act DECIMAL(10,2),     -- ETL: MIN(downhole_pump_load ID:158/74)
+    max_pump_load_lb_act DECIMAL(10,2),     -- ID:74 directo SCADA (monitor_carga_bomba)
+    min_pump_load_lb_act DECIMAL(10,2),     -- ID:74 directo SCADA (monitor_carga_bomba)
     
     -- [NUEVO] Road Load (Carga Varillas) - Zero Calc
     road_load_pct_act DECIMAL(5,2),
@@ -489,7 +489,7 @@ CREATE TABLE IF NOT EXISTS reporting.dataset_current_values (
     
     -- [NUEVO] Diagnósticos Adicionales
     pump_stroke_length_act DECIMAL(10,2),  -- ETL: MAX(downhole_pump_position ID:157) carta fondo
-    current_stroke_length_act_in DECIMAL(10,2),  -- [V4 NEW] ID 68: Variable calculada
+    current_stroke_length_act_in DECIMAL(10,2),  -- CALC: MAX(surface_rod_position ID:155) carta superficie
     pump_stroke_length_var_pct DECIMAL(5,2),
     pump_stroke_length_status_color VARCHAR(7),
     

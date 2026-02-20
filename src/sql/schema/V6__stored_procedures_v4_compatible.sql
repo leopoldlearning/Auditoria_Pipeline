@@ -124,14 +124,10 @@ BEGIN
         -- [V6.1] Carga y Eficiencia calculados
         p.maximum_rod_load,         -- max_rod_load_lb_act (ID:76 directo SCADA)
         p.minimum_rod_load,         -- min_rod_load_lb_act (ID:77 directo SCADA)
-        -- max_pump_load_lb_act: MAX del array downhole_pump_load (ID:158/74)
-        (SELECT MAX(v::DECIMAL) FROM unnest(string_to_array(
-            NULLIF(TRIM(p.downhole_pump_load), ''), ',')) AS v
-         WHERE v ~ '^-?[0-9]+(\.[0-9]+)?$'),
-        -- min_pump_load_lb_act: MIN del array downhole_pump_load (ID:158/74)
-        (SELECT MIN(v::DECIMAL) FROM unnest(string_to_array(
-            NULLIF(TRIM(p.downhole_pump_load), ''), ',')) AS v
-         WHERE v ~ '^-?[0-9]+(\.[0-9]+)?$'),
+        -- max_pump_load_lb_act: monitor_carga_bomba (ID:74 directo SCADA)
+        p.monitor_carga_bomba,
+        -- min_pump_load_lb_act: monitor_carga_bomba (ID:74 directo SCADA)
+        p.monitor_carga_bomba,
         ROUND((p.maximum_rod_load / NULLIF(m.carga_nominal_unidad, 0)) * 100, 2),  -- road_load_pct_act
         p.eficiencia_levantamiento, -- lift_efficiency_pct_act
 
@@ -154,7 +150,10 @@ BEGIN
         p.kwh_por_barril,                    -- kpi_kwh_bbl_act
         p.porcentaje_operacion_diario,       -- kpi_uptime_pct_act
         p.temperatura_tanque_aceite,         -- tank_fluid_temperature_f
-        p.longitud_carrera_nominal_unidad_in,-- current_stroke_length_act_in
+        -- current_stroke_length_act_in: MAX posición carta superficie (surface_rod_position ID:155)
+        (SELECT MAX(v::DECIMAL) FROM unnest(string_to_array(
+            NULLIF(TRIM(p.surface_rod_position), ''), ',')) AS v
+         WHERE v ~ '^-?[0-9]+(\.[0-9]+)?$'),
         
         -- [V6.3] Mapeos adicionales
         p.pump_fill_monitor,                 -- llenado_bomba_pct (alias de pump_fill_monitor_pct)
